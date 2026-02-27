@@ -1,0 +1,30 @@
+import { pullTrackedKeywords, pullBulkKeywords, updateNextPullAt } from '../utils/pull'
+
+export default defineTask({
+  meta: {
+    name: 'cron:pull-rankings',
+    description: 'Auto-pull GSC rankings for scheduled properties',
+  },
+  async run() {
+    const Property = (await import('../models/Property.js')).default
+
+    const now = new Date()
+    const properties = await Property.find({
+      'pullSchedule.isScheduled': true,
+      'pullSchedule.nextPullAt': { $lte: now },
+    })
+
+    for (const prop of properties) {
+      try {
+        await pullTrackedKeywords(String(prop.userId), String(prop._id))
+        await pullBulkKeywords(String(prop.userId), String(prop._id))
+        prop.pullSchedule.nextPullAt = updateNextPullAt(prop)
+        await prop.save()
+      } catch (err) {
+        console.error(`[cron] Failed to pull rankings for property ${prop._id}:`, err)
+      }
+    }
+
+    return { result: `Processed ${properties.length} scheduled properties` }
+  },
+})
