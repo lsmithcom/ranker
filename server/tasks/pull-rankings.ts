@@ -26,6 +26,7 @@ export default defineTask({
       // so a failed pull never leaves nextPullAt stuck in the past.
       try {
         prop.pullSchedule.nextPullAt = updateNextPullAt(prop)
+        prop.markModified('pullSchedule')
         await prop.save()
       } catch (err) {
         console.error(`[cron] Failed to advance nextPullAt for property ${prop._id}:`, err)
