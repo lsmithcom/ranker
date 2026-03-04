@@ -1,6 +1,5 @@
 import mongoose from 'mongoose'
 import KeywordRanking from '../../models/KeywordRanking.js'
-import BulkKeywordMeta from '../../models/BulkKeywordMeta.js'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -10,29 +9,24 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'propertyId is required' })
   }
 
-  const page = Math.max(1, parseInt(String(query.page || '1')))
-  const pageSize = Math.min(5000, Math.max(1, parseInt(String(query.pageSize || '50'))))
-  const skip = (page - 1) * pageSize
-
   const propertyId = new mongoose.Types.ObjectId(String(query.propertyId))
   const userId = new mongoose.Types.ObjectId(String(user.id))
 
-  // Aggregate to get latest and previous position per keyword
   const pipeline = [
     {
       $match: {
         userId,
         propertyId,
-        source: 'bulk_discovery',
+        page: { $exists: true, $nin: [null, ''] },
       },
     },
-    { $sort: { keyword: 1, date: -1 } },
+    { $sort: { page: 1, keyword: 1, date: -1 } },
     {
       $group: {
-        _id: '$keyword',
+        _id: { page: '$page', keyword: '$keyword' },
+        source: { $first: '$source' },
         latestDate: { $first: '$date' },
         latestPosition: { $first: '$position' },
-        latestPage: { $first: '$page' },
         latestClicks: { $first: '$clicks' },
         latestImpressions: { $first: '$impressions' },
         allPositions: { $push: { position: '$position', date: '$date' } },
@@ -73,57 +67,26 @@ export default defineEventHandler(async (event) => {
         },
       },
     },
-    { $sort: { _id: 1 } },
+    { $sort: { '_id.page': 1, '_id.keyword': 1 } },
   ]
 
-  const [countResult, rows] = await Promise.all([
-    KeywordRanking.aggregate([
-      ...pipeline.slice(0, 3), // match + sort + group
-      { $count: 'total' },
-    ]),
-    KeywordRanking.aggregate([
-      ...pipeline,
-      { $skip: skip },
-      { $limit: pageSize },
-    ]),
-  ])
+  const rows = await KeywordRanking.aggregate(pipeline)
 
-  const total = countResult[0]?.total ?? 0
-
-  // Fetch group assignments
-  const keywords = rows.map((r: Record<string, unknown>) => String(r._id))
-  const metas = await BulkKeywordMeta.find({
-    userId: user.id,
-    propertyId: query.propertyId,
-    keyword: { $in: keywords },
+  const data = rows.map((r: Record<string, unknown>) => {
+    const id = r._id as { page: string; keyword: string }
+    return {
+      page: id.page,
+      keyword: id.keyword,
+      source: r.source,
+      latestPosition: r.latestPosition,
+      previousPosition: r.previousPosition,
+      positionChange: r.positionChange,
+      latestDate: r.latestDate,
+      previousDate: r.previousDate,
+      latestClicks: r.latestClicks,
+      latestImpressions: r.latestImpressions,
+    }
   })
 
-  const groupMap: Record<string, string | null> = {}
-  for (const m of metas) {
-    groupMap[m.keyword] = m.groupId ? String(m.groupId) : null
-  }
-
-  const data = rows.map((r: Record<string, unknown>) => ({
-    keyword: r._id,
-    latestPosition: r.latestPosition,
-    previousPosition: r.previousPosition,
-    positionChange: r.positionChange,
-    latestPage: r.latestPage,
-    latestDate: r.latestDate,
-    previousDate: r.previousDate,
-    latestClicks: r.latestClicks,
-    latestImpressions: r.latestImpressions,
-    groupId: groupMap[String(r._id)] ?? null,
-  }))
-
-  return {
-    success: true,
-    data,
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
-  }
+  return { success: true, data }
 })

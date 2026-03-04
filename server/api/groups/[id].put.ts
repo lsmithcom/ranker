@@ -4,15 +4,20 @@ export default defineEventHandler(async (event) => {
   const user = event.context.user
   const id = getRouterParam(event, 'id')
   const body = await readBody(event)
-  const { name } = body
+  const { name, parentId } = body
 
   if (!name) {
     throw createError({ statusCode: 400, message: 'name is required' })
   }
 
+  const update: Record<string, unknown> = { name: name.trim() }
+  if (parentId !== undefined) {
+    update.parentId = parentId || null
+  }
+
   const group = await KeywordGroup.findOneAndUpdate(
     { _id: id, userId: user.id },
-    { $set: { name: name.trim() } },
+    { $set: update },
     { new: true }
   )
 

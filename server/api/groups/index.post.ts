@@ -4,7 +4,7 @@ import Property from '../../models/Property.js'
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   const body = await readBody(event)
-  const { propertyId, name, type } = body
+  const { propertyId, name, type, parentId } = body
 
   if (!propertyId || !name || !type) {
     throw createError({ statusCode: 400, message: 'propertyId, name, and type are required' })
@@ -19,12 +19,24 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Property not found' })
   }
 
-  const existing = await KeywordGroup.findOne({ userId: user.id, propertyId, name: name.trim(), type })
+  const existing = await KeywordGroup.findOne({
+    userId: user.id,
+    propertyId,
+    parentId: parentId || null,
+    name: name.trim(),
+    type,
+  })
   if (existing) {
-    throw createError({ statusCode: 409, message: 'A group with this name already exists' })
+    throw createError({ statusCode: 409, message: 'A group with this name already exists in this location' })
   }
 
-  const group = await KeywordGroup.create({ userId: user.id, propertyId, name: name.trim(), type })
+  const group = await KeywordGroup.create({
+    userId: user.id,
+    propertyId,
+    name: name.trim(),
+    type,
+    parentId: parentId || null,
+  })
 
   return { success: true, data: group }
 })

@@ -19,6 +19,11 @@ const keywordGroupSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    parentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'KeywordGroup',
+      default: null,
+    },
     type: {
       type: String,
       enum: ['tracked', 'bulk'],
@@ -28,6 +33,6 @@ const keywordGroupSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-keywordGroupSchema.index({ userId: 1, propertyId: 1, name: 1, type: 1 }, { unique: true })
+keywordGroupSchema.index({ userId: 1, propertyId: 1, parentId: 1, name: 1, type: 1 }, { unique: true })
 
 export default mongoose.models.KeywordGroup || mongoose.model('KeywordGroup', keywordGroupSchema)

@@ -17,6 +17,19 @@
           />
         </div>
 
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Parent Group (optional)</label>
+          <select
+            v-model="parentId"
+            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+          >
+            <option value="">None (root level)</option>
+            <option v-for="opt in flatGroupOptions" :key="opt.group._id" :value="opt.group._id">
+              {{ '— '.repeat(opt.depth) }}{{ opt.group.name }}
+            </option>
+          </select>
+        </div>
+
         <div v-if="error" class="text-sm text-red-600">{{ error }}</div>
 
         <div class="flex justify-end gap-3 pt-2">
@@ -41,9 +54,21 @@
 </template>
 
 <script setup lang="ts">
+interface Group {
+  _id: string
+  name: string
+  parentId: string | null
+}
+
+interface FlatOption {
+  group: Group
+  depth: number
+}
+
 const props = defineProps<{
   propertyId: string
   type: 'tracked' | 'bulk'
+  groups?: Group[]
 }>()
 
 const emit = defineEmits<{
@@ -52,8 +77,31 @@ const emit = defineEmits<{
 }>()
 
 const name = ref('')
+const parentId = ref('')
 const loading = ref(false)
 const error = ref('')
+
+const flatGroupOptions = computed<FlatOption[]>(() => {
+  const allGroups = props.groups || []
+  const result: FlatOption[] = []
+  const childrenMap = new Map<string | null, Group[]>()
+
+  for (const g of allGroups) {
+    const pid = g.parentId || null
+    if (!childrenMap.has(pid)) childrenMap.set(pid, [])
+    childrenMap.get(pid)!.push(g)
+  }
+
+  function traverse(pid: string | null, depth: number) {
+    for (const g of childrenMap.get(pid) || []) {
+      result.push({ group: g, depth })
+      traverse(g._id, depth + 1)
+    }
+  }
+
+  traverse(null, 0)
+  return result
+})
 
 async function submit() {
   error.value = ''
@@ -61,7 +109,12 @@ async function submit() {
   try {
     const data = await $fetch<{ success: boolean; data: unknown }>('/api/groups', {
       method: 'POST',
-      body: { propertyId: props.propertyId, name: name.value, type: props.type },
+      body: {
+        propertyId: props.propertyId,
+        name: name.value,
+        type: props.type,
+        parentId: parentId.value || undefined,
+      },
     })
     emit('created', data.data)
     emit('close')

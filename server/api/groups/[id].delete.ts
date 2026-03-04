@@ -11,11 +11,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Group not found' })
   }
 
-  // Clear group assignments for tracked keywords
+  // Promote direct children one level up (re-parent to this group's parent)
+  await KeywordGroup.updateMany({ userId: user.id, parentId: id }, { $set: { parentId: group.parentId ?? null } })
+
+  // Move keywords/terms in deleted group to its parent (or ungroup if root)
   if (group.type === 'tracked') {
-    await TrackedKeyword.updateMany({ userId: user.id, groupId: id }, { $set: { groupId: null } })
+    await TrackedKeyword.updateMany({ userId: user.id, groupId: id }, { $set: { groupId: group.parentId ?? null } })
   } else {
-    await BulkKeywordMeta.updateMany({ userId: user.id, groupId: id }, { $set: { groupId: null } })
+    await BulkKeywordMeta.updateMany({ userId: user.id, groupId: id }, { $set: { groupId: group.parentId ?? null } })
   }
 
   await group.deleteOne()

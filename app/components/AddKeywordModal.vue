@@ -24,7 +24,9 @@
             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
           >
             <option value="">No group</option>
-            <option v-for="g in groups" :key="g._id" :value="g._id">{{ g.name }}</option>
+            <option v-for="opt in flatGroupOptions" :key="opt.group._id" :value="opt.group._id">
+              {{ '— '.repeat(opt.depth) }}{{ opt.group.name }}
+            </option>
           </select>
         </div>
 
@@ -67,12 +69,39 @@
 interface Group {
   _id: string
   name: string
+  parentId: string | null
+}
+
+interface FlatOption {
+  group: Group
+  depth: number
 }
 
 const props = defineProps<{
   propertyId: string
   groups: Group[]
 }>()
+
+const flatGroupOptions = computed<FlatOption[]>(() => {
+  const result: FlatOption[] = []
+  const childrenMap = new Map<string | null, Group[]>()
+
+  for (const g of props.groups) {
+    const pid = g.parentId || null
+    if (!childrenMap.has(pid)) childrenMap.set(pid, [])
+    childrenMap.get(pid)!.push(g)
+  }
+
+  function traverse(pid: string | null, depth: number) {
+    for (const g of childrenMap.get(pid) || []) {
+      result.push({ group: g, depth })
+      traverse(g._id, depth + 1)
+    }
+  }
+
+  traverse(null, 0)
+  return result
+})
 
 const emit = defineEmits<{
   (e: 'close'): void

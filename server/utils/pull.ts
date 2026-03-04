@@ -14,17 +14,24 @@ export function updateNextPullAt(property: {
   }
 }): Date {
   const { frequency, nextPullAt, pullHour } = property.pullSchedule
+  const now = new Date()
   const base = new Date(nextPullAt)
 
-  if (frequency === 'daily') {
-    base.setDate(base.getDate() + 1)
-  } else if (frequency === 'weekly') {
-    base.setDate(base.getDate() + 7)
-  } else if (frequency === 'monthly') {
-    base.setMonth(base.getMonth() + 1)
-  }
+  // Keep advancing until the result is in the future, so stale nextPullAt
+  // values (e.g. a date from the past) always resolve to the next valid time.
+  do {
+    if (frequency === 'daily') {
+      base.setDate(base.getDate() + 1)
+    } else if (frequency === 'weekly') {
+      base.setDate(base.getDate() + 7)
+    } else if (frequency === 'monthly') {
+      base.setMonth(base.getMonth() + 1)
+    } else {
+      break
+    }
+    base.setHours(pullHour, 0, 0, 0)
+  } while (base <= now)
 
-  base.setHours(pullHour, 0, 0, 0)
   return base
 }
 
