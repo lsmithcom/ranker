@@ -37,7 +37,7 @@
           </div>
           <div>
             <dt class="text-gray-500">Pull Hour</dt>
-            <dd class="font-medium">{{ formatPullHour(selectedProperty.pullSchedule?.pullHour, selectedProperty.pullSchedule?.nextPullAt) }}</dd>
+            <dd class="font-medium">{{ formatPullHour(selectedProperty.pullSchedule?.pullHour) }}</dd>
           </div>
           <div>
             <dt class="text-gray-500">Last Pulled</dt>
@@ -75,12 +75,12 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Pull Hour (UTC)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Pull Hour (Pacific Time)</label>
             <select
               v-model="form.pullHour"
               class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
             >
-              <option v-for="h in 24" :key="h - 1" :value="h - 1">{{ String(h - 1).padStart(2, '0') }}:00</option>
+              <option v-for="h in 24" :key="h - 1" :value="h - 1">{{ String(h - 1).padStart(2, '0') }}:00 PT</option>
             </select>
           </div>
 
@@ -142,6 +142,8 @@
 <script setup lang="ts">
 definePageMeta({ middleware: 'auth' })
 
+const PT = 'America/Los_Angeles'
+
 interface Property {
   _id: string
   propertyName: string
@@ -156,6 +158,36 @@ interface Property {
   }
 }
 
+// Convert a UTC hour (0-23) to Pacific hour, respecting DST automatically.
+function utcHourToPacific(utcHour: number): number {
+  const d = new Date()
+  d.setUTCHours(utcHour, 0, 0, 0)
+  const str = d.toLocaleString('en-US', { timeZone: PT, hour: 'numeric', hour12: false })
+  const h = parseInt(str)
+  return isNaN(h) ? utcHour : h % 24
+}
+
+// Convert a Pacific hour (0-23) to UTC hour, respecting DST automatically.
+function pacificHourToUtc(ptHour: number): number {
+  for (let u = 0; u < 24; u++) {
+    if (utcHourToPacific(u) === ptHour) return u
+  }
+  return ptHour
+}
+
+// Format any date string in Pacific time.
+function formatDate(d?: string | null) {
+  if (!d) return '—'
+  return new Date(d).toLocaleString('en-US', { timeZone: PT }) + ' PT'
+}
+
+// Display the stored UTC pullHour as Pacific time.
+function formatPullHour(pullHour?: number | null) {
+  if (pullHour == null) return '—'
+  const ptHour = utcHourToPacific(pullHour)
+  return String(ptHour).padStart(2, '0') + ':00 PT'
+}
+
 const properties = ref<Property[]>([])
 const selectedPropertyId = ref('')
 
@@ -167,10 +199,11 @@ const tomorrow = new Date()
 tomorrow.setDate(tomorrow.getDate() + 1)
 const tomorrowStr = tomorrow.toISOString().split('T')[0]
 
+// form.pullHour is always in Pacific time for display/input
 const form = ref({
   frequency: 'daily',
   startDate: tomorrowStr,
-  pullHour: 12,
+  pullHour: 11, // default 11:00 PT
 })
 
 const frequencies = [
@@ -187,7 +220,7 @@ const pulling = ref({ tracked: false, bulk: false })
 const pullMessage = ref('')
 const pullError = ref(false)
 
-// Populate form when property changes
+// Populate form when property changes; convert stored UTC pullHour → Pacific
 watch(selectedPropertyId, () => {
   saveSuccess.value = false
   saveError.value = ''
@@ -195,7 +228,7 @@ watch(selectedPropertyId, () => {
   const p = selectedProperty.value
   if (p?.pullSchedule) {
     form.value.frequency = p.pullSchedule.frequency || 'daily'
-    form.value.pullHour = p.pullSchedule.pullHour ?? 12
+    form.value.pullHour = utcHourToPacific(p.pullSchedule.pullHour ?? 18)
     form.value.startDate = p.pullSchedule.startDate
       ? new Date(p.pullSchedule.startDate).toISOString().split('T')[0]
       : tomorrowStr
@@ -215,6 +248,8 @@ async function saveSchedule() {
   saveError.value = ''
   saveSuccess.value = false
   try {
+    // Convert Pacific hour → UTC before sending to server
+    const utcHour = pacificHourToUtc(Number(form.value.pullHour))
     const result = await $fetch<{ success: boolean; data: Property }>(
       `/api/properties/${selectedPropertyId.value}`,
       {
@@ -223,13 +258,12 @@ async function saveSchedule() {
           pullSchedule: {
             frequency: form.value.frequency,
             startDate: form.value.startDate,
-            pullHour: Number(form.value.pullHour),
+            pullHour: utcHour,
             isScheduled: true,
           },
         },
       }
     )
-    // Update local property
     const idx = properties.value.findIndex((p) => p._id === selectedPropertyId.value)
     if (idx >= 0) properties.value.splice(idx, 1, result.data)
     saveSuccess.value = true
@@ -274,7 +308,6 @@ async function pullTracked() {
       body: { propertyId: selectedPropertyId.value },
     })
     pullMessage.value = 'Tracked keyword pull complete.'
-    // Refresh lastPulledAt
     await loadProperties()
   } catch (err: unknown) {
     const e = err as { data?: { message?: string } }
@@ -303,25 +336,6 @@ async function pullBulk() {
   } finally {
     pulling.value.bulk = false
   }
-}
-
-function formatDate(d?: string | null) {
-  if (!d) return '—'
-  return new Date(d).toLocaleString()
-}
-
-// pullHour is stored in UTC. Derive the local display from nextPullAt if available,
-// otherwise fall back to showing the raw UTC hour with a label.
-function formatPullHour(pullHour?: number | null, nextPullAt?: string | null) {
-  if (pullHour == null) return '—'
-  if (nextPullAt) {
-    const d = new Date(nextPullAt)
-    const localHour = d.getHours()
-    const localStr = String(localHour).padStart(2, '0') + ':00'
-    const utcStr = String(pullHour).padStart(2, '0') + ':00 UTC'
-    return `${localStr} local (${utcStr})`
-  }
-  return String(pullHour).padStart(2, '0') + ':00 UTC'
 }
 
 onMounted(loadProperties)
