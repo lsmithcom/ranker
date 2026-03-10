@@ -1,4 +1,4 @@
-import { pullTrackedKeywords, pullBulkKeywords, updateNextPullAt } from '../utils/pull'
+import { pullTrackedKeywords, pullBulkKeywords, updateNextPullAt } from '../../utils/pull'
 
 export default defineTask({
   meta: {
@@ -6,7 +6,7 @@ export default defineTask({
     description: 'Auto-pull GSC rankings for scheduled properties',
   },
   async run() {
-    const Property = (await import('../models/Property.js')).default
+    const Property = (await import('../../models/Property.js')).default
 
     const now = new Date()
     const properties = await Property.find({

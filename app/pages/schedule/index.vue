@@ -37,7 +37,7 @@
           </div>
           <div>
             <dt class="text-gray-500">Pull Hour</dt>
-            <dd class="font-medium">{{ selectedProperty.pullSchedule?.pullHour ?? '—' }}:00</dd>
+            <dd class="font-medium">{{ formatPullHour(selectedProperty.pullSchedule?.pullHour, selectedProperty.pullSchedule?.nextPullAt) }}</dd>
           </div>
           <div>
             <dt class="text-gray-500">Last Pulled</dt>
@@ -308,6 +308,20 @@ async function pullBulk() {
 function formatDate(d?: string | null) {
   if (!d) return '—'
   return new Date(d).toLocaleString()
+}
+
+// pullHour is stored in UTC. Derive the local display from nextPullAt if available,
+// otherwise fall back to showing the raw UTC hour with a label.
+function formatPullHour(pullHour?: number | null, nextPullAt?: string | null) {
+  if (pullHour == null) return '—'
+  if (nextPullAt) {
+    const d = new Date(nextPullAt)
+    const localHour = d.getHours()
+    const localStr = String(localHour).padStart(2, '0') + ':00'
+    const utcStr = String(pullHour).padStart(2, '0') + ':00 UTC'
+    return `${localStr} local (${utcStr})`
+  }
+  return String(pullHour).padStart(2, '0') + ':00 UTC'
 }
 
 onMounted(loadProperties)
