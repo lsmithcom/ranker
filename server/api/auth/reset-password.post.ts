@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 import crypto from 'crypto'
+import bcrypt from 'bcrypt'
 import User from '../../models/User'
-import { hashUserPassword, validatePasswordStrength } from '../../utils/password'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: 'Token and password are required' })
     }
 
-    if (!validatePasswordStrength(password)) {
+    if (typeof password !== 'string' || password.length < 8) {
       throw createError({ statusCode: 400, message: 'Password must be at least 8 characters long' })
     }
 
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const newHash = await hashUserPassword(password)
+    const newHash = await bcrypt.hash(password, 10)
 
     await (User as any).updateOne(
       { _id: user._id },
