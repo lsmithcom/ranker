@@ -12,6 +12,7 @@ export default defineEventHandler(async (event) => {
     '/api/auth/register',
     '/api/auth/logout',
     '/api/auth/google',
+    '/api/cron/', // cron endpoints use their own x-cron-secret header auth
   ]
 
   if (publicPaths.some(p => path.startsWith(p))) {

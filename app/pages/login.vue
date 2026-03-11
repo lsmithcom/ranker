@@ -27,13 +27,19 @@
 
       <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
 
-      <button
-        type="submit"
-        :disabled="loading"
-        class="w-full bg-gray-900 text-white py-2.5 rounded text-sm font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {{ loading ? 'Logging in...' : 'Login' }}
-      </button>
+      <div class="flex items-center justify-between">
+        <button
+          type="submit"
+          :disabled="loading"
+          class="w-full bg-gray-900 text-white py-2.5 rounded text-sm font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {{ loading ? 'Logging in...' : 'Login' }}
+        </button>
+      </div>
+
+      <p class="text-sm text-center">
+        <NuxtLink to="/forgot-password" class="text-gray-500 hover:text-gray-900 hover:underline">Forgot password?</NuxtLink>
+      </p>
     </form>
 
     <p class="mt-6 text-sm text-gray-500 text-center">

@@ -9,7 +9,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'propertyId is required' })
   }
 
-  await pullBulkKeywords(String(user.id), String(propertyId))
+  try {
+    await pullBulkKeywords(String(user.id), String(propertyId))
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    throw createError({ statusCode: 500, message: `Pull failed: ${msg}` })
+  }
 
   return { success: true, message: 'Bulk pull completed' }
 })
