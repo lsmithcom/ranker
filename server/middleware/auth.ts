@@ -12,6 +12,8 @@ export default defineEventHandler(async (event) => {
     '/api/auth/register',
     '/api/auth/logout',
     '/api/auth/google',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
     '/api/cron/', // cron endpoints use their own x-cron-secret header auth
   ]
 
