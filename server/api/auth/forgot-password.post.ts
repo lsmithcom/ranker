@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 import crypto from 'crypto'
-import User from '#server/models/User'
-import { sendEmail, generatePasswordResetHTML, generatePasswordResetText } from '#server/utils/email'
+import User from '../../models/User'
+import { sendEmail, generatePasswordResetHTML, generatePasswordResetText } from '../../utils/email'
 
 const SUCCESS_RESPONSE = {
   success: true,

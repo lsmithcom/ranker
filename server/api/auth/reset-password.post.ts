@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 import crypto from 'crypto'
-import User from '#server/models/User'
-import { hashUserPassword, validatePasswordStrength } from '#server/utils/password'
+import User from '../../models/User'
+import { hashUserPassword, validatePasswordStrength } from '../../utils/password'
 
 export default defineEventHandler(async (event) => {
   try {
