@@ -453,16 +453,21 @@ const flatDisplayRows = computed<DisplayRow[]>(() => {
   return rows
 })
 
+function parseDateLocal(dateStr: string): Date {
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 const latestDateLabel = computed(() => {
   const kw = keywords.value.find((k) => k.latestDate)
   if (!kw?.latestDate) return 'Latest'
-  return new Date(kw.latestDate).toLocaleDateString()
+  return parseDateLocal(kw.latestDate).toLocaleDateString()
 })
 
 const previousDateLabel = computed(() => {
   const kw = keywords.value.find((k) => k.previousDate)
   if (!kw?.previousDate) return 'Previous'
-  return new Date(kw.previousDate).toLocaleDateString()
+  return parseDateLocal(kw.previousDate).toLocaleDateString()
 })
 
 const allChecked = computed(() => keywords.value.length > 0 && selectedIds.value.length === keywords.value.length)

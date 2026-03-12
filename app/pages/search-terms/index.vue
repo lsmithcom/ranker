@@ -556,16 +556,21 @@ function toggleTerm(keyword: string) {
   expandedTerms.value = next
 }
 
+function parseDateLocal(dateStr: string): Date {
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 const latestDateLabel = computed(() => {
   const row = rows.value.find((r) => r.latestDate)
   if (!row?.latestDate) return 'Latest'
-  return new Date(row.latestDate).toLocaleDateString()
+  return parseDateLocal(row.latestDate).toLocaleDateString()
 })
 
 const previousDateLabel = computed(() => {
   const row = rows.value.find((r) => r.previousDate)
   if (!row?.previousDate) return 'Previous'
-  return new Date(row.previousDate).toLocaleDateString()
+  return parseDateLocal(row.previousDate).toLocaleDateString()
 })
 
 function changeClass(change: number | null) {
