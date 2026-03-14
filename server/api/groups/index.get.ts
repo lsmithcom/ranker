@@ -1,12 +1,11 @@
 import KeywordGroup from '../../models/KeywordGroup.js'
+import { verifyPropertyOwnership } from '../../utils/verify-property.js'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   const query = getQuery(event)
 
-  if (!query.propertyId) {
-    throw createError({ statusCode: 400, message: 'propertyId is required' })
-  }
+  await verifyPropertyOwnership(String(query.propertyId || ''), user.id)
 
   const filter: Record<string, unknown> = { userId: user.id, propertyId: query.propertyId }
   if (query.type) filter.type = query.type

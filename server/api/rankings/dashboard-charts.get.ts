@@ -1,13 +1,12 @@
 import mongoose from 'mongoose'
 import KeywordRanking from '../../models/KeywordRanking.js'
+import { verifyPropertyOwnership } from '../../utils/verify-property.js'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   const query = getQuery(event)
 
-  if (!query.propertyId) {
-    throw createError({ statusCode: 400, message: 'propertyId is required' })
-  }
+  await verifyPropertyOwnership(String(query.propertyId || ''), user.id)
 
   const propertyId = new mongoose.Types.ObjectId(String(query.propertyId))
   const userId = new mongoose.Types.ObjectId(String(user.id))

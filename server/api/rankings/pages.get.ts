@@ -1,4 +1,5 @@
 import KeywordRanking from '../../models/KeywordRanking.js'
+import { verifyPropertyOwnership } from '../../utils/verify-property.js'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -9,6 +10,8 @@ export default defineEventHandler(async (event) => {
   if (!keyword || !propertyId) {
     throw createError({ statusCode: 400, message: 'keyword and propertyId are required' })
   }
+
+  await verifyPropertyOwnership(String(propertyId), user.id)
 
   const filter: Record<string, unknown> = {
     userId: user.id,

@@ -1,14 +1,13 @@
 import mongoose from 'mongoose'
 import KeywordRanking from '../../models/KeywordRanking.js'
 import BulkKeywordMeta from '../../models/BulkKeywordMeta.js'
+import { verifyPropertyOwnership } from '../../utils/verify-property.js'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   const query = getQuery(event)
 
-  if (!query.propertyId) {
-    throw createError({ statusCode: 400, message: 'propertyId is required' })
-  }
+  await verifyPropertyOwnership(String(query.propertyId || ''), user.id)
 
   const page = Math.max(1, parseInt(String(query.page || '1')))
   const pageSize = Math.min(5000, Math.max(1, parseInt(String(query.pageSize || '50'))))
