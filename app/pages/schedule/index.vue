@@ -130,6 +130,24 @@
         <div v-if="pullMessage" class="text-sm mt-3" :class="pullError ? 'text-red-600' : 'text-green-600'">
           {{ pullMessage }}
         </div>
+
+        <div class="mt-5 pt-5 border-t border-gray-100">
+          <p class="text-sm text-gray-500 mb-3">Test GSC API queries for this property.</p>
+          <div class="flex gap-3">
+            <NuxtLink
+              to="/test/query"
+              class="text-sm px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+            >
+              Test Query
+            </NuxtLink>
+            <NuxtLink
+              to="/test/bulk"
+              class="text-sm px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+            >
+              Test Bulk
+            </NuxtLink>
+          </div>
+        </div>
       </div>
     </template>
 

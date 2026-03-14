@@ -54,21 +54,7 @@
               >
                 Import
               </NuxtLink>
-              <NuxtLink
-                to="/test/query"
-                class="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                active-class="text-gray-900 font-medium"
-              >
-                Test Query
-              </NuxtLink>
-              <NuxtLink
-                to="/test/bulk"
-                class="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                active-class="text-gray-900 font-medium"
-              >
-                Test Bulk
-              </NuxtLink>
-              <span class="text-sm text-gray-400">{{ user?.firstName }}</span>
+<span class="text-sm text-gray-400">{{ user?.firstName }}</span>
               <button
                 @click="logout"
                 class="text-sm text-gray-500 hover:text-gray-900 transition-colors"

@@ -9,6 +9,7 @@ export function useAuth() {
       body: { email, password },
     })
     await refreshSession()
+    sessionStorage.setItem('sessionActive', '1')
     return data
   }
 
@@ -23,10 +24,12 @@ export function useAuth() {
       body: { email, password, firstName, lastName },
     })
     await refreshSession()
+    sessionStorage.setItem('sessionActive', '1')
     return data
   }
 
   async function logout() {
+    sessionStorage.removeItem('sessionActive')
     await $fetch('/api/auth/logout', { method: 'POST' })
     await refreshSession()
     await navigateTo('/login')
