@@ -11,7 +11,7 @@
     <div v-else>
       <div class="flex items-start justify-between mb-6">
         <div>
-          <h1 class="text-xl font-bold text-gray-900">{{ keyword }}</h1>
+          <h1 class="text-xl font-semibold text-gray-900">{{ keyword }}</h1>
           <p class="text-sm text-gray-400 mt-1">Historical ranking data</p>
         </div>
         <div v-if="rankings.length" class="text-right">
@@ -22,30 +22,30 @@
 
       <!-- Summary stats -->
       <div v-if="rankings.length" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <div class="bg-white border border-gray-200 rounded p-4">
+        <div class="bg-white shadow-sm rounded p-4">
           <div class="text-xs text-gray-400 mb-1">Avg Position (30d)</div>
           <div class="text-xl font-bold text-gray-800">{{ avgPosition }}</div>
         </div>
-        <div class="bg-white border border-gray-200 rounded p-4">
+        <div class="bg-white shadow-sm rounded p-4">
           <div class="text-xs text-gray-400 mb-1">Total Clicks</div>
           <div class="text-xl font-bold text-gray-800">{{ totalClicks.toLocaleString() }}</div>
         </div>
-        <div class="bg-white border border-gray-200 rounded p-4">
+        <div class="bg-white shadow-sm rounded p-4">
           <div class="text-xs text-gray-400 mb-1">Total Impressions</div>
           <div class="text-xl font-bold text-gray-800">{{ totalImpressions.toLocaleString() }}</div>
         </div>
-        <div class="bg-white border border-gray-200 rounded p-4">
+        <div class="bg-white shadow-sm rounded p-4">
           <div class="text-xs text-gray-400 mb-1">Avg CTR</div>
           <div class="text-xl font-bold text-gray-800">{{ avgCtr }}%</div>
         </div>
       </div>
 
       <!-- Rankings table -->
-      <div v-if="!rankings.length" class="bg-white border border-gray-200 rounded p-8 text-center text-sm text-gray-400">
+      <div v-if="!rankings.length" class="bg-white shadow-sm rounded p-8 text-center text-sm text-gray-400">
         No ranking data yet. Run a GSC query to populate data for this keyword.
       </div>
 
-      <div v-else class="bg-white border border-gray-200 rounded overflow-hidden">
+      <div v-else class="bg-white shadow-sm rounded overflow-hidden">
         <table class="w-full text-sm">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>

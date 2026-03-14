@@ -3,7 +3,7 @@
 
     <!-- Page header -->
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-xl font-bold text-gray-900">Dashboard</h1>
+      <h1 class="text-xl font-semibold text-gray-900">Dashboard</h1>
       <select
         v-model="selectedPropertyId"
         class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 min-w-52"
@@ -36,12 +36,12 @@
         </div>
 
         <div v-if="chartsLoading" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div v-for="i in 3" :key="i" class="bg-white border border-gray-200 rounded-lg p-5 h-48 animate-pulse" />
+          <div v-for="i in 3" :key="i" class="bg-white shadow-sm rounded-lg p-5 h-48 animate-pulse" />
         </div>
         <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
           <!-- Avg Position -->
-          <div class="bg-white border border-gray-200 rounded-lg p-5">
+          <div class="bg-white shadow-sm rounded-lg p-5">
             <div class="flex items-center justify-between mb-1">
               <span class="text-xs font-medium text-gray-400 uppercase tracking-wide">Avg Position</span>
               <span class="text-xs text-gray-300">(lower = better)</span>
@@ -62,7 +62,7 @@
           </div>
 
           <!-- Organic Traffic -->
-          <div class="bg-white border border-gray-200 rounded-lg p-5">
+          <div class="bg-white shadow-sm rounded-lg p-5">
             <div class="flex items-center justify-between mb-1">
               <span class="text-xs font-medium text-gray-400 uppercase tracking-wide">Organic Traffic</span>
               <span class="text-xs text-gray-300">(clicks)</span>
@@ -82,7 +82,7 @@
           </div>
 
           <!-- Unique Terms -->
-          <div class="bg-white border border-gray-200 rounded-lg p-5">
+          <div class="bg-white shadow-sm rounded-lg p-5">
             <div class="flex items-center justify-between mb-1">
               <span class="text-xs font-medium text-gray-400 uppercase tracking-wide">Unique Terms</span>
               <span class="text-xs text-gray-300">(per day)</span>
@@ -125,7 +125,7 @@
       <div class="mb-10">
         <h2 class="text-base font-semibold text-gray-700 mb-4">Tracked Keywords</h2>
         <div v-if="keywordsLoading" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div v-for="i in 3" :key="i" class="bg-white border border-gray-200 rounded-lg h-64 animate-pulse" />
+          <div v-for="i in 3" :key="i" class="bg-white shadow-sm rounded-lg h-64 animate-pulse" />
         </div>
         <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <KeywordPanel
@@ -153,7 +153,7 @@
       <div class="mb-10">
         <h2 class="text-base font-semibold text-gray-700 mb-4">Search Terms</h2>
         <div v-if="bulkLoading" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div v-for="i in 3" :key="i" class="bg-white border border-gray-200 rounded-lg h-64 animate-pulse" />
+          <div v-for="i in 3" :key="i" class="bg-white shadow-sm rounded-lg h-64 animate-pulse" />
         </div>
         <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <KeywordPanel
@@ -180,7 +180,7 @@
     </template>
 
     <!-- No property selected prompt -->
-    <div v-else-if="!propertiesLoading && !properties.length" class="text-sm text-gray-500 bg-white border border-gray-200 rounded p-6 text-center">
+    <div v-else-if="!propertiesLoading && !properties.length" class="text-sm text-gray-500 bg-white shadow-sm rounded p-6 text-center">
       No properties yet.
       <NuxtLink to="/settings" class="text-indigo-600 hover:underline">Go to Settings</NuxtLink>
       to add your first GSC property.

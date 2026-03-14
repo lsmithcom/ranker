@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-xl font-bold text-gray-900">Manage Keywords</h1>
+      <h1 class="text-xl font-semibold text-gray-900">Manage Keywords</h1>
       <NuxtLink
         to="/keywords"
         class="text-sm text-gray-500 hover:text-gray-900 transition-colors"
@@ -35,7 +35,7 @@
       </div>
 
       <!-- Add keyword form -->
-      <div v-if="showAddKeyword" class="bg-white border border-gray-200 rounded p-4 mb-4">
+      <div v-if="showAddKeyword" class="bg-white shadow-sm rounded p-4 mb-4">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block text-xs text-gray-500 mb-1">Keyword</label>
@@ -89,11 +89,11 @@
       <div v-if="keywordsLoading" class="text-sm text-gray-400">Loading keywords...</div>
       <div
         v-else-if="!keywords.length"
-        class="text-sm text-gray-400 bg-white border border-gray-200 rounded p-6 text-center"
+        class="text-sm text-gray-400 bg-white shadow-sm rounded p-6 text-center"
       >
         No keywords tracked yet. Add your first keyword above.
       </div>
-      <div v-else class="bg-white border border-gray-200 rounded overflow-hidden">
+      <div v-else class="bg-white shadow-sm rounded overflow-hidden">
         <table class="w-full text-sm">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>

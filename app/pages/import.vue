@@ -71,7 +71,7 @@
     </div>
 
     <!-- Success results -->
-    <div v-if="results" class="mt-6 p-5 bg-white border border-gray-200 rounded-lg">
+    <div v-if="results" class="mt-6 p-5 bg-white shadow-sm rounded-lg">
       <p class="text-sm font-semibold text-gray-900 mb-4">Import complete</p>
 
       <div class="grid grid-cols-2 gap-4 mb-4">

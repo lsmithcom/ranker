@@ -1,10 +1,10 @@
 <template>
   <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-xl font-bold text-gray-900 mb-1">GSC Bulk Search Terms</h1>
+    <h1 class="text-xl font-semibold text-gray-900 mb-1">GSC Bulk Search Terms</h1>
     <p class="text-sm text-gray-400 mb-6">Pull all search terms from Google Search Console. Useful for discovery — these become your "Search Terms" data.</p>
 
     <!-- Form -->
-    <div class="bg-white border border-gray-200 rounded p-5 mb-6">
+    <div class="bg-white shadow-sm rounded p-5 mb-6">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <div>
           <label class="block text-xs font-medium text-gray-600 mb-1">GSC Site URL *</label>
@@ -110,11 +110,11 @@
             </div>
           </div>
 
-          <div v-if="!result.processed.length" class="text-sm text-gray-400 bg-white border border-gray-200 rounded p-4">
+          <div v-if="!result.processed.length" class="text-sm text-gray-400 bg-white shadow-sm rounded p-4">
             No search terms returned. Try a different date range.
           </div>
 
-          <div v-else class="bg-white border border-gray-200 rounded overflow-hidden">
+          <div v-else class="bg-white shadow-sm rounded overflow-hidden">
             <table class="w-full text-sm">
               <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>

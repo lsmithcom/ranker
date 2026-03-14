@@ -16,7 +16,7 @@
 
     <template v-if="selectedProperty">
       <!-- Status card -->
-      <div class="bg-white border border-gray-200 rounded-lg p-5 mb-6">
+      <div class="bg-white shadow-sm rounded-lg p-5 mb-6">
         <div class="flex items-center justify-between mb-3">
           <span class="text-sm font-medium text-gray-700">Schedule Status</span>
           <span
@@ -51,7 +51,7 @@
       </div>
 
       <!-- Schedule form -->
-      <div class="bg-white border border-gray-200 rounded-lg p-5 mb-6">
+      <div class="bg-white shadow-sm rounded-lg p-5 mb-6">
         <h2 class="text-sm font-semibold text-gray-900 mb-4">Configure Schedule</h2>
 
         <form @submit.prevent="saveSchedule" class="space-y-4">
@@ -108,7 +108,7 @@
       </div>
 
       <!-- Manual pull buttons -->
-      <div class="bg-white border border-gray-200 rounded-lg p-5">
+      <div class="bg-white shadow-sm rounded-lg p-5">
         <h2 class="text-sm font-semibold text-gray-900 mb-3">Pull Now</h2>
         <p class="text-sm text-gray-500 mb-4">Manually trigger a data pull for this property.</p>
         <div class="flex gap-3">

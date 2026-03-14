@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+  <div class="bg-white shadow-sm rounded-lg overflow-hidden">
     <!-- Panel header -->
     <div class="px-4 py-3 border-b border-gray-100 bg-gray-50">
       <p class="text-sm font-semibold text-gray-800">{{ title }}</p>

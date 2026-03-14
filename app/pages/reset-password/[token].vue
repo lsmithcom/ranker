@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-md mx-auto px-4 py-16">
-    <h1 class="text-2xl font-bold text-gray-900 mb-8">Reset Password</h1>
+    <h1 class="text-2xl font-semibold text-gray-900 mb-8">Reset Password</h1>
 
     <!-- Success state -->
     <div v-if="success">

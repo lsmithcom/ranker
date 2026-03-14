@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gray-50 text-gray-900">
+  <div class="min-h-screen flex flex-col bg-app-bg text-app-text">
     <!-- Header -->
     <header class="bg-white border-b border-gray-200">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-14">
           <!-- Logo / Brand -->
           <NuxtLink to="/" class="text-lg font-bold text-gray-900 tracking-tight">
-            Ranker
+            Bebop
           </NuxtLink>
 
           <!-- Nav links -->

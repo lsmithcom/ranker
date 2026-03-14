@@ -1,8 +1,8 @@
 <template>
   <div class="max-w-4xl mx-auto px-4 py-20 text-center">
-    <h1 class="text-4xl font-bold text-gray-900 mb-4">GSC Rank Tracker</h1>
+    <h1 class="text-3xl font-semibold text-gray-900 mb-4">Welcome</h1>
     <p class="text-lg text-gray-500 mb-10">
-      Track keyword rankings from Google Search Console over time.
+      If you dont know what you are doing here, then you dont belong.
     </p>
 
     <div v-if="isLoggedIn" class="flex justify-center gap-4">

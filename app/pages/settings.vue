@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-xl font-bold text-gray-900 mb-8">Settings</h1>
+    <h1 class="text-xl font-semibold text-gray-900 mb-8">Settings</h1>
 
     <!-- ── Google Search Console ──────────────────────────────── -->
     <div class="mb-10">
@@ -40,7 +40,7 @@
       </div>
 
       <!-- Add property form -->
-      <div v-if="showAddProperty" class="bg-white border border-gray-200 rounded p-4 mb-4">
+      <div v-if="showAddProperty" class="bg-white shadow-sm rounded p-4 mb-4">
         <h3 class="text-sm font-medium text-gray-700 mb-3">Add New Property</h3>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
@@ -97,11 +97,11 @@
       <div v-if="propertiesLoading" class="text-sm text-gray-400">Loading properties...</div>
       <div
         v-else-if="!properties.length"
-        class="text-sm text-gray-400 bg-white border border-gray-200 rounded p-6 text-center"
+        class="text-sm text-gray-400 bg-white shadow-sm rounded p-6 text-center"
       >
         No properties yet. Add your first GSC property above.
       </div>
-      <div v-else class="bg-white border border-gray-200 rounded overflow-hidden">
+      <div v-else class="bg-white shadow-sm rounded overflow-hidden">
         <table class="w-full text-sm">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>

@@ -12,7 +12,7 @@
 
     <div
       v-if="open"
-      class="absolute z-50 left-0 top-6 w-72 bg-white border border-gray-200 rounded shadow-lg"
+      class="absolute z-50 left-0 top-6 w-72 bg-white rounded shadow-lg"
     >
       <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100">
         <span class="text-xs font-medium text-gray-700">Ranking Pages</span>

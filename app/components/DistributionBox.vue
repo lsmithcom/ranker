@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white border border-gray-200 rounded-lg p-5">
+  <div class="bg-white shadow-sm rounded-lg p-5">
     <h3 class="text-sm font-semibold text-gray-800 mb-4">{{ title }}</h3>
     <div v-if="!data.length" class="grid grid-cols-2 gap-3">
       <div

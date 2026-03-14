@@ -19,7 +19,7 @@
       </div>
 
       <!-- Table -->
-      <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div class="bg-white shadow-sm rounded-lg overflow-hidden">
         <table class="w-full text-sm">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
