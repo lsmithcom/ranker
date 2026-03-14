@@ -42,7 +42,15 @@
         >
           {{ deleting ? 'Deleting…' : `Delete Selected (${selectedIds.length})` }}
         </button>
-        <div class="ml-auto text-sm text-gray-500">{{ keywords.length }} keyword(s)</div>
+        <div class="ml-auto flex items-center gap-4">
+          <span class="text-sm text-gray-500">{{ keywords.length }} keyword(s)</span>
+          <NuxtLink
+            to="/manage-keywords"
+            class="text-sm text-gray-500 hover:text-gray-900 border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50 transition-colors"
+          >
+            Manage Keywords
+          </NuxtLink>
+        </div>
       </div>
 
       <!-- Table -->

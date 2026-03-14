@@ -54,7 +54,11 @@
               >
                 Import
               </NuxtLink>
-<span class="text-sm text-gray-400">{{ user?.firstName }}</span>
+              <NuxtLink
+                to="/settings"
+                class="text-sm text-gray-400 hover:text-gray-700 transition-colors"
+                active-class="text-gray-700"
+              >{{ user?.firstName }}</NuxtLink>
               <button
                 @click="logout"
                 class="text-sm text-gray-500 hover:text-gray-900 transition-colors"

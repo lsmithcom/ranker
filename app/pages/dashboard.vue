@@ -1,303 +1,346 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- GSC connection banner -->
-    <div
-      v-if="gscStatus"
-      :class="gscStatus === 'connected' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'"
-      class="border rounded px-4 py-3 text-sm mb-6"
-    >
-      {{ gscStatus === 'connected' ? 'Google Search Console connected successfully.' : `GSC connection error: ${gscError}` }}
-    </div>
 
+    <!-- Page header -->
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-xl font-bold text-gray-900">Dashboard</h1>
-      <a
-        href="/api/auth/google"
-        class="text-sm border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 transition-colors"
+      <select
+        v-model="selectedPropertyId"
+        class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 min-w-52"
       >
-        Connect Google Search Console
-      </a>
+        <option value="">Select a property…</option>
+        <option v-for="p in properties" :key="p._id" :value="p._id">{{ p.propertyName }}</option>
+      </select>
     </div>
 
-    <!-- Properties -->
-    <div class="mb-8">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-base font-semibold text-gray-700">Properties</h2>
-        <button
-          @click="showAddProperty = !showAddProperty"
-          class="text-sm bg-gray-900 text-white px-4 py-1.5 rounded hover:bg-gray-700 transition-colors"
-        >
-          Add Property
-        </button>
-      </div>
+    <!-- ── Analytics (only when a property is selected) ──────── -->
+    <template v-if="selectedPropertyId">
 
-      <!-- Add property form -->
-      <div v-if="showAddProperty" class="bg-white border border-gray-200 rounded p-4 mb-4">
-        <h3 class="text-sm font-medium text-gray-700 mb-3">Add New Property</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Property Name</label>
-            <input
-              v-model="newProperty.propertyName"
-              type="text"
-              placeholder="My Website"
-              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-            />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Property URL</label>
-            <input
-              v-model="newProperty.propertyUrl"
-              type="text"
-              placeholder="https://example.com"
-              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-            />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">GSC Site URL</label>
-            <input
-              v-model="newProperty.gscSiteUrl"
-              type="text"
-              placeholder="sc-domain:example.com"
-              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-            />
-          </div>
-        </div>
-        <p class="text-xs text-gray-400 mt-2">GSC Site URL is either <code>sc-domain:example.com</code> (domain property) or <code>https://example.com/</code> (URL prefix property)</p>
-        <div class="flex gap-2 mt-3">
-          <button
-            @click="addProperty"
-            :disabled="addingProperty"
-            class="text-sm bg-gray-900 text-white px-4 py-1.5 rounded hover:bg-gray-700 transition-colors disabled:opacity-50"
-          >
-            {{ addingProperty ? 'Adding...' : 'Add' }}
-          </button>
-          <button
-            @click="showAddProperty = false"
-            class="text-sm border border-gray-300 px-4 py-1.5 rounded hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-        <p v-if="propertyError" class="text-xs text-red-600 mt-2">{{ propertyError }}</p>
-      </div>
-
-      <!-- Properties list -->
-      <div v-if="propertiesLoading" class="text-sm text-gray-400">Loading properties...</div>
-      <div v-else-if="!properties.length" class="text-sm text-gray-400 bg-white border border-gray-200 rounded p-6 text-center">
-        No properties yet. Add your first GSC property above.
-      </div>
-      <div v-else class="bg-white border border-gray-200 rounded overflow-hidden">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Name</th>
-              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">URL</th>
-              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">GSC Site URL</th>
-              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Last Pulled</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr
-              v-for="prop in properties"
-              :key="prop._id"
-              class="hover:bg-gray-50 cursor-pointer"
-              @click="selectedPropertyId = prop._id"
-              :class="selectedPropertyId === prop._id ? 'bg-blue-50' : ''"
+      <!-- ── Section 1: Performance Charts ──────────────────── -->
+      <div class="mb-10">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-semibold text-gray-700">Performance Overview</h2>
+          <div class="flex gap-1 bg-gray-100 rounded p-0.5">
+            <button
+              v-for="r in chartRanges"
+              :key="r.value"
+              @click="chartRange = r.value"
+              :class="[
+                'text-xs px-3 py-1 rounded transition-colors',
+                chartRange === r.value ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700',
+              ]"
             >
-              <td class="px-4 py-3 font-medium text-gray-800">{{ prop.propertyName }}</td>
-              <td class="px-4 py-3 text-gray-500">{{ prop.propertyUrl }}</td>
-              <td class="px-4 py-3 text-gray-500 font-mono text-xs">{{ prop.gscSiteUrl }}</td>
-              <td class="px-4 py-3 text-gray-400">{{ prop.lastPulledAt ? formatDate(prop.lastPulledAt) : 'Never' }}</td>
-            </tr>
-          </tbody>
-        </table>
+              {{ r.label }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="chartsLoading" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div v-for="i in 3" :key="i" class="bg-white border border-gray-200 rounded-lg p-5 h-48 animate-pulse" />
+        </div>
+        <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+          <!-- Avg Position -->
+          <div class="bg-white border border-gray-200 rounded-lg p-5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-medium text-gray-400 uppercase tracking-wide">Avg Position</span>
+              <span class="text-xs text-gray-300">(lower = better)</span>
+            </div>
+            <div class="text-2xl font-bold text-gray-800 mb-4 tabular-nums">
+              {{ latestAvgPosition != null ? latestAvgPosition.toFixed(1) : '—' }}
+            </div>
+            <div class="h-24">
+              <DashboardChart
+                :labels="chartLabels"
+                :values="positionValues"
+                color="#7B9ED0"
+                fill-color="rgba(123,158,208,0.12)"
+                :invertY="true"
+                tooltip-label="Position"
+              />
+            </div>
+          </div>
+
+          <!-- Organic Traffic -->
+          <div class="bg-white border border-gray-200 rounded-lg p-5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-medium text-gray-400 uppercase tracking-wide">Organic Traffic</span>
+              <span class="text-xs text-gray-300">(clicks)</span>
+            </div>
+            <div class="text-2xl font-bold text-gray-800 mb-4 tabular-nums">
+              {{ latestClicks != null ? latestClicks.toLocaleString() : '—' }}
+            </div>
+            <div class="h-24">
+              <DashboardChart
+                :labels="chartLabels"
+                :values="clickValues"
+                color="#72A98A"
+                fill-color="rgba(114,169,138,0.12)"
+                tooltip-label="Clicks"
+              />
+            </div>
+          </div>
+
+          <!-- Unique Terms -->
+          <div class="bg-white border border-gray-200 rounded-lg p-5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-medium text-gray-400 uppercase tracking-wide">Unique Terms</span>
+              <span class="text-xs text-gray-300">(per day)</span>
+            </div>
+            <div class="text-2xl font-bold text-gray-800 mb-4 tabular-nums">
+              {{ latestUniqueTerms != null ? latestUniqueTerms.toLocaleString() : '—' }}
+            </div>
+            <div class="h-24">
+              <DashboardChart
+                :labels="chartLabels"
+                :values="uniqueTermValues"
+                color="#9E84B8"
+                fill-color="rgba(158,132,184,0.12)"
+                tooltip-label="Terms"
+              />
+            </div>
+          </div>
+
+        </div>
       </div>
+
+      <!-- ── Section 2: Performance Distribution ───────────── -->
+      <div class="mb-10">
+        <h2 class="text-base font-semibold text-gray-700 mb-4">Performance Distribution</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <DistributionBox
+            title="Keywords"
+            :labels="distKeywordsLabels"
+            :data="distKeywords"
+          />
+          <DistributionBox
+            title="Search Terms"
+            :labels="distBulkLabels"
+            :data="distBulk"
+          />
+        </div>
+      </div>
+
+      <!-- ── Section 3: Tracked Keyword Panels ─────────────── -->
+      <div class="mb-10">
+        <h2 class="text-base font-semibold text-gray-700 mb-4">Tracked Keywords</h2>
+        <div v-if="keywordsLoading" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div v-for="i in 3" :key="i" class="bg-white border border-gray-200 rounded-lg h-64 animate-pulse" />
+        </div>
+        <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <KeywordPanel
+            title="Top Keywords"
+            subtitle="Best ranking positions"
+            :items="topTrackedKeywords"
+            mode="top"
+          />
+          <KeywordPanel
+            title="Biggest Jumps"
+            subtitle="Largest position gains"
+            :items="jumpedTrackedKeywords"
+            mode="jumped"
+          />
+          <KeywordPanel
+            title="Biggest Drops"
+            subtitle="Largest position declines"
+            :items="droppedTrackedKeywords"
+            mode="dropped"
+          />
+        </div>
+      </div>
+
+      <!-- ── Section 3: Search Term Panels ──────────────────── -->
+      <div class="mb-10">
+        <h2 class="text-base font-semibold text-gray-700 mb-4">Search Terms</h2>
+        <div v-if="bulkLoading" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div v-for="i in 3" :key="i" class="bg-white border border-gray-200 rounded-lg h-64 animate-pulse" />
+        </div>
+        <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <KeywordPanel
+            title="Top Terms"
+            subtitle="Best ranking search terms"
+            :items="topBulkTerms"
+            mode="top"
+          />
+          <KeywordPanel
+            title="Biggest Jumps"
+            subtitle="Largest position gains"
+            :items="jumpedBulkTerms"
+            mode="jumped"
+          />
+          <KeywordPanel
+            title="Biggest Drops"
+            subtitle="Largest position declines"
+            :items="droppedBulkTerms"
+            mode="dropped"
+          />
+        </div>
+      </div>
+
+    </template>
+
+    <!-- No property selected prompt -->
+    <div v-else-if="!propertiesLoading && !properties.length" class="text-sm text-gray-500 bg-white border border-gray-200 rounded p-6 text-center">
+      No properties yet.
+      <NuxtLink to="/settings" class="text-indigo-600 hover:underline">Go to Settings</NuxtLink>
+      to add your first GSC property.
     </div>
 
-    <!-- Tracked Keywords (shown when a property is selected) -->
-    <div v-if="selectedPropertyId">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-base font-semibold text-gray-700">Tracked Keywords</h2>
-        <button
-          @click="showAddKeyword = !showAddKeyword"
-          class="text-sm bg-gray-900 text-white px-4 py-1.5 rounded hover:bg-gray-700 transition-colors"
-        >
-          Add Keyword
-        </button>
-      </div>
-
-      <!-- Add keyword form -->
-      <div v-if="showAddKeyword" class="bg-white border border-gray-200 rounded p-4 mb-4">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Keyword</label>
-            <input
-              v-model="newKeyword.keyword"
-              type="text"
-              placeholder="best running shoes"
-              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-            />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Priority</label>
-            <select
-              v-model="newKeyword.priority"
-              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-            >
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Target Page (optional)</label>
-            <input
-              v-model="newKeyword.targetPage"
-              type="text"
-              placeholder="https://example.com/page"
-              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-            />
-          </div>
-        </div>
-        <div class="flex gap-2 mt-3">
-          <button
-            @click="addKeyword"
-            :disabled="addingKeyword"
-            class="text-sm bg-gray-900 text-white px-4 py-1.5 rounded hover:bg-gray-700 transition-colors disabled:opacity-50"
-          >
-            {{ addingKeyword ? 'Adding...' : 'Add Keyword' }}
-          </button>
-          <button @click="showAddKeyword = false" class="text-sm border border-gray-300 px-4 py-1.5 rounded hover:bg-gray-50 transition-colors">
-            Cancel
-          </button>
-        </div>
-        <p v-if="keywordError" class="text-xs text-red-600 mt-2">{{ keywordError }}</p>
-      </div>
-
-      <!-- Keywords table -->
-      <div v-if="keywordsLoading" class="text-sm text-gray-400">Loading keywords...</div>
-      <div v-else-if="!keywords.length" class="text-sm text-gray-400 bg-white border border-gray-200 rounded p-6 text-center">
-        No keywords tracked yet. Add your first keyword above.
-      </div>
-      <div v-else class="bg-white border border-gray-200 rounded overflow-hidden">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Keyword</th>
-              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Priority</th>
-              <th class="text-right px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Position</th>
-              <th class="text-right px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Change</th>
-              <th class="text-right px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Clicks</th>
-              <th class="text-right px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Impressions</th>
-              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Last Data</th>
-              <th class="px-4 py-2.5"></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr
-              v-for="kw in keywords"
-              :key="kw._id"
-              class="hover:bg-gray-50"
-            >
-              <td class="px-4 py-3">
-                <NuxtLink
-                  :to="`/keywords/${kw._id}`"
-                  class="font-medium text-gray-800 hover:text-blue-600 hover:underline"
-                >
-                  {{ kw.keyword }}
-                </NuxtLink>
-              </td>
-              <td class="px-4 py-3">
-                <span
-                  :class="{
-                    'text-red-600 bg-red-50': kw.priority === 'high',
-                    'text-yellow-600 bg-yellow-50': kw.priority === 'medium',
-                    'text-gray-500 bg-gray-50': kw.priority === 'low',
-                  }"
-                  class="text-xs px-2 py-0.5 rounded font-medium"
-                >
-                  {{ kw.priority }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-right text-gray-700 font-mono">
-                {{ kw.latestPosition != null ? kw.latestPosition.toFixed(1) : '—' }}
-              </td>
-              <td class="px-4 py-3 text-right font-mono text-xs">
-                <span
-                  v-if="kw.positionChange != null"
-                  :class="kw.positionChange > 0 ? 'text-green-600' : kw.positionChange < 0 ? 'text-red-600' : 'text-gray-400'"
-                >
-                  {{ kw.positionChange > 0 ? '▲' : kw.positionChange < 0 ? '▼' : '—' }}
-                  {{ Math.abs(kw.positionChange).toFixed(1) }}
-                </span>
-                <span v-else class="text-gray-300">—</span>
-              </td>
-              <td class="px-4 py-3 text-right text-gray-600">{{ kw.latestClicks ?? '—' }}</td>
-              <td class="px-4 py-3 text-right text-gray-600">{{ kw.latestImpressions?.toLocaleString() ?? '—' }}</td>
-              <td class="px-4 py-3 text-gray-400 text-xs">{{ kw.latestDate ? formatDate(kw.latestDate) : '—' }}</td>
-              <td class="px-4 py-3 text-right">
-                <button
-                  @click="deleteKeyword(kw._id)"
-                  class="text-xs text-red-400 hover:text-red-600 transition-colors"
-                >
-                  Remove
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 definePageMeta({ middleware: 'auth' })
 
+// ── Types ────────────────────────────────────────────────────────
+
+interface PanelItem {
+  keyword: string
+  latestPosition: number | null
+  positionChange: number | null
+}
+
 interface Property {
   _id: string
   propertyName: string
-  propertyUrl: string
-  gscSiteUrl: string
-  lastPulledAt: string | null
 }
 
 interface Keyword {
   _id: string
   keyword: string
-  priority: string
   latestPosition: number | null
-  latestClicks: number | null
-  latestImpressions: number | null
-  latestDate: string | null
   positionChange: number | null
 }
 
-const route = useRoute()
-const gscStatus = computed(() => route.query.gsc as string | undefined)
-const gscError = computed(() => route.query.reason as string | undefined)
+interface BulkTerm {
+  keyword: string
+  latestPosition: number | null
+  positionChange: number | null
+}
 
-// Properties
+interface DistributionPoint {
+  date: string
+  top1: number
+  top2_5: number
+  top5_10: number
+  top10_20: number
+  top20_50: number
+  top50_100: number
+}
+
+interface ChartPoint {
+  date: string
+  avgPosition: number
+  totalClicks: number
+  uniqueTerms: number
+}
+
+// ── Properties ───────────────────────────────────────────────────
+
 const properties = ref<Property[]>([])
 const propertiesLoading = ref(true)
-const showAddProperty = ref(false)
-const addingProperty = ref(false)
-const propertyError = ref('')
-const newProperty = reactive({ propertyName: '', propertyUrl: '', gscSiteUrl: '' })
-const selectedPropertyId = ref<string | null>(null)
+const selectedPropertyId = ref('')
 
-// Keywords
+// ── Keywords ─────────────────────────────────────────────────────
+
 const keywords = ref<Keyword[]>([])
 const keywordsLoading = ref(false)
-const showAddKeyword = ref(false)
-const addingKeyword = ref(false)
-const keywordError = ref('')
-const newKeyword = reactive({ keyword: '', priority: 'medium', targetPage: '' })
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString()
-}
+// ── Bulk terms ───────────────────────────────────────────────────
+
+const bulkTerms = ref<BulkTerm[]>([])
+const bulkLoading = ref(false)
+
+// ── Distribution ─────────────────────────────────────────────────
+
+const distKeywords = ref<DistributionPoint[]>([])
+const distBulk = ref<DistributionPoint[]>([])
+
+const distKeywordsLabels = computed(() =>
+  distKeywords.value.map((p) => {
+    const d = new Date(p.date + 'T00:00:00')
+    return `${d.getMonth() + 1}/${d.getDate()}`
+  })
+)
+const distBulkLabels = computed(() =>
+  distBulk.value.map((p) => {
+    const d = new Date(p.date + 'T00:00:00')
+    return `${d.getMonth() + 1}/${d.getDate()}`
+  })
+)
+
+// ── Charts ───────────────────────────────────────────────────────
+
+const chartRanges = [
+  { label: '30D', value: '30d' },
+  { label: '90D', value: '90d' },
+  { label: '180D', value: '180d' },
+]
+const chartRange = ref<'30d' | '90d' | '180d'>('30d')
+const chartsLoading = ref(false)
+const chartPoints = ref<ChartPoint[]>([])
+
+const chartLabels = computed(() =>
+  chartPoints.value.map((p) => {
+    const d = new Date(p.date + 'T00:00:00')
+    return `${d.getMonth() + 1}/${d.getDate()}`
+  })
+)
+const positionValues = computed(() => chartPoints.value.map((p) => p.avgPosition))
+const clickValues = computed(() => chartPoints.value.map((p) => p.totalClicks))
+const uniqueTermValues = computed(() => chartPoints.value.map((p) => p.uniqueTerms))
+
+const latestAvgPosition = computed(() => chartPoints.value.at(-1)?.avgPosition ?? null)
+const latestClicks = computed(() => chartPoints.value.at(-1)?.totalClicks ?? null)
+const latestUniqueTerms = computed(() => chartPoints.value.at(-1)?.uniqueTerms ?? null)
+
+// ── Keyword panels (tracked) ─────────────────────────────────────
+
+const topTrackedKeywords = computed<PanelItem[]>(() =>
+  [...keywords.value]
+    .filter((k) => k.latestPosition != null)
+    .sort((a, b) => (a.latestPosition ?? 999) - (b.latestPosition ?? 999))
+    .slice(0, 7)
+)
+
+const jumpedTrackedKeywords = computed<PanelItem[]>(() =>
+  [...keywords.value]
+    .filter((k) => k.positionChange != null && k.positionChange > 0)
+    .sort((a, b) => (b.positionChange ?? 0) - (a.positionChange ?? 0))
+    .slice(0, 7)
+)
+
+const droppedTrackedKeywords = computed<PanelItem[]>(() =>
+  [...keywords.value]
+    .filter((k) => k.positionChange != null && k.positionChange < 0)
+    .sort((a, b) => (a.positionChange ?? 0) - (b.positionChange ?? 0))
+    .slice(0, 7)
+)
+
+// ── Keyword panels (bulk) ────────────────────────────────────────
+
+const topBulkTerms = computed<PanelItem[]>(() =>
+  [...bulkTerms.value]
+    .filter((k) => k.latestPosition != null)
+    .sort((a, b) => (a.latestPosition ?? 999) - (b.latestPosition ?? 999))
+    .slice(0, 7)
+)
+
+const jumpedBulkTerms = computed<PanelItem[]>(() =>
+  [...bulkTerms.value]
+    .filter((k) => k.positionChange != null && k.positionChange > 0)
+    .sort((a, b) => (b.positionChange ?? 0) - (a.positionChange ?? 0))
+    .slice(0, 7)
+)
+
+const droppedBulkTerms = computed<PanelItem[]>(() =>
+  [...bulkTerms.value]
+    .filter((k) => k.positionChange != null && k.positionChange < 0)
+    .sort((a, b) => (a.positionChange ?? 0) - (b.positionChange ?? 0))
+    .slice(0, 7)
+)
+
+// ── Data loaders ─────────────────────────────────────────────────
 
 async function loadProperties() {
   propertiesLoading.value = true
@@ -308,32 +351,24 @@ async function loadProperties() {
       selectedPropertyId.value = properties.value[0]._id
     }
   } catch {
-    // handled silently; could add error state
+    // silent
   } finally {
     propertiesLoading.value = false
   }
 }
 
-async function addProperty() {
-  propertyError.value = ''
-  addingProperty.value = true
+async function loadCharts() {
+  if (!selectedPropertyId.value) return
+  chartsLoading.value = true
   try {
-    await $fetch('/api/properties', {
-      method: 'POST',
-      body: {
-        propertyName: newProperty.propertyName,
-        propertyUrl: newProperty.propertyUrl,
-        gscSiteUrl: newProperty.gscSiteUrl,
-      },
+    const res = await $fetch<{ success: boolean; data: ChartPoint[] }>('/api/rankings/dashboard-charts', {
+      query: { propertyId: selectedPropertyId.value, range: chartRange.value },
     })
-    Object.assign(newProperty, { propertyName: '', propertyUrl: '', gscSiteUrl: '' })
-    showAddProperty.value = false
-    await loadProperties()
-  } catch (err: unknown) {
-    const e = err as { data?: { message?: string } }
-    propertyError.value = e?.data?.message || 'Failed to add property'
+    chartPoints.value = res.data || []
+  } catch {
+    chartPoints.value = []
   } finally {
-    addingProperty.value = false
+    chartsLoading.value = false
   }
 }
 
@@ -344,52 +379,65 @@ async function loadKeywords() {
     const res = await $fetch<{ data: Keyword[] }>(`/api/keywords?propertyId=${selectedPropertyId.value}`)
     keywords.value = res.data
   } catch {
-    // handled silently
+    // silent
   } finally {
     keywordsLoading.value = false
   }
 }
 
-async function addKeyword() {
-  keywordError.value = ''
-  addingKeyword.value = true
+async function loadBulkTerms() {
+  if (!selectedPropertyId.value) return
+  bulkLoading.value = true
   try {
-    await $fetch('/api/keywords', {
-      method: 'POST',
-      body: {
-        propertyId: selectedPropertyId.value,
-        keyword: newKeyword.keyword,
-        priority: newKeyword.priority,
-        targetPage: newKeyword.targetPage || undefined,
-      },
+    const res = await $fetch<{ data: BulkTerm[] }>('/api/rankings/bulk-summary', {
+      query: { propertyId: selectedPropertyId.value, pageSize: 1000 },
     })
-    Object.assign(newKeyword, { keyword: '', priority: 'medium', targetPage: '' })
-    showAddKeyword.value = false
-    await loadKeywords()
-  } catch (err: unknown) {
-    const e = err as { data?: { message?: string } }
-    keywordError.value = e?.data?.message || 'Failed to add keyword'
+    bulkTerms.value = res.data || []
+  } catch {
+    bulkTerms.value = []
   } finally {
-    addingKeyword.value = false
+    bulkLoading.value = false
   }
 }
 
-async function deleteKeyword(id: string) {
-  if (!confirm('Remove this keyword from tracking?')) return
+async function loadDistribution() {
+  if (!selectedPropertyId.value) return
+  const params = { propertyId: selectedPropertyId.value, range: chartRange.value }
   try {
-    await $fetch(`/api/keywords/${id}`, { method: 'DELETE' })
-    keywords.value = keywords.value.filter(k => k._id !== id)
+    const [kwRes, bulkRes] = await Promise.all([
+      $fetch<{ success: boolean; data: DistributionPoint[] }>('/api/rankings/distribution', {
+        query: { ...params, source: 'specific_query' },
+      }),
+      $fetch<{ success: boolean; data: DistributionPoint[] }>('/api/rankings/distribution', {
+        query: { ...params, source: 'bulk_discovery' },
+      }),
+    ])
+    distKeywords.value = kwRes.data || []
+    distBulk.value = bulkRes.data || []
   } catch {
-    alert('Failed to remove keyword')
+    distKeywords.value = []
+    distBulk.value = []
   }
 }
+
+// ── Watchers ─────────────────────────────────────────────────────
 
 watch(selectedPropertyId, () => {
   keywords.value = []
+  bulkTerms.value = []
+  chartPoints.value = []
+  distKeywords.value = []
+  distBulk.value = []
+  loadCharts()
   loadKeywords()
+  loadBulkTerms()
+  loadDistribution()
 })
 
-onMounted(() => {
-  loadProperties()
+watch(chartRange, () => {
+  loadCharts()
+  loadDistribution()
 })
+
+onMounted(loadProperties)
 </script>
