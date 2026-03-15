@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import Ga4TrafficSource from '../../models/Ga4TrafficSource.js'
+import Ga4GeoMetric from '../../models/Ga4GeoMetric.js'
 import { verifyPropertyOwnership } from '../../utils/verify-property.js'
 
 export default defineEventHandler(async (event) => {
@@ -18,32 +18,18 @@ export default defineEventHandler(async (event) => {
   else if (range === '180d') cutoff.setDate(cutoff.getDate() - 180)
   else cutoff.setDate(cutoff.getDate() - 30)
 
-  const data = await (Ga4TrafficSource as any).aggregate([
+  const data = await (Ga4GeoMetric as any).aggregate([
     { $match: { userId, propertyId, date: { $gte: cutoff } } },
     {
       $group: {
-        _id: { source: '$sessionSource', medium: '$sessionMedium' },
+        _id: '$country',
         sessions: { $sum: '$sessions' },
         users: { $sum: '$users' },
-        newUsers: { $sum: '$newUsers' },
-        bounceRate: { $avg: '$bounceRate' },
-        engagementRate: { $avg: '$engagementRate' },
       },
     },
     { $sort: { sessions: -1 } },
-    { $limit: 50 },
-    {
-      $project: {
-        _id: 0,
-        source: '$_id.source',
-        medium: '$_id.medium',
-        sessions: 1,
-        users: 1,
-        newUsers: 1,
-        bounceRate: { $round: ['$bounceRate', 4] },
-        engagementRate: { $round: ['$engagementRate', 4] },
-      },
-    },
+    { $limit: 20 },
+    { $project: { _id: 0, country: '$_id', sessions: 1, users: 1 } },
   ])
 
   return { success: true, data }

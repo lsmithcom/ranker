@@ -14,11 +14,12 @@ export default defineEventHandler(async (event) => {
 
   const range = String(query.range || '30d')
   const cutoff = new Date()
-  if (range === '90d') cutoff.setDate(cutoff.getDate() - 90)
+  if (range === '7d') cutoff.setDate(cutoff.getDate() - 7)
+  else if (range === '90d') cutoff.setDate(cutoff.getDate() - 90)
   else if (range === '180d') cutoff.setDate(cutoff.getDate() - 180)
   else cutoff.setDate(cutoff.getDate() - 30)
 
-  // Daily totals for charting (sessions, users, pageviews over time)
+  // Daily totals for charting — session-weighted bounce/engagement/duration rates
   const dailyTotals = await (Ga4PageMetric as any).aggregate([
     { $match: { userId, propertyId, date: { $gte: cutoff } } },
     {
@@ -28,6 +29,9 @@ export default defineEventHandler(async (event) => {
         users: { $sum: '$users' },
         screenPageViews: { $sum: '$screenPageViews' },
         newUsers: { $sum: '$newUsers' },
+        bounceRateWeighted: { $sum: { $multiply: ['$bounceRate', '$sessions'] } },
+        engagementRateWeighted: { $sum: { $multiply: ['$engagementRate', '$sessions'] } },
+        durationWeighted: { $sum: { $multiply: ['$avgSessionDurationSec', '$sessions'] } },
       },
     },
     { $sort: { _id: 1 } },
@@ -39,6 +43,27 @@ export default defineEventHandler(async (event) => {
         users: 1,
         screenPageViews: 1,
         newUsers: 1,
+        bounceRate: {
+          $cond: [
+            { $eq: ['$sessions', 0] },
+            0,
+            { $round: [{ $multiply: [{ $divide: ['$bounceRateWeighted', '$sessions'] }, 100] }, 1] },
+          ],
+        },
+        engagementRate: {
+          $cond: [
+            { $eq: ['$sessions', 0] },
+            0,
+            { $round: [{ $multiply: [{ $divide: ['$engagementRateWeighted', '$sessions'] }, 100] }, 1] },
+          ],
+        },
+        avgSessionDurationSec: {
+          $cond: [
+            { $eq: ['$sessions', 0] },
+            0,
+            { $round: [{ $divide: ['$durationWeighted', '$sessions'] }, 1] },
+          ],
+        },
       },
     },
   ])
@@ -64,7 +89,7 @@ export default defineEventHandler(async (event) => {
     },
   ])
 
-  // Summary totals for the period
+  // Session-weighted summary totals for the period
   const totalRows = await (Ga4PageMetric as any).aggregate([
     { $match: { userId, propertyId, date: { $gte: cutoff } } },
     {
@@ -74,20 +99,24 @@ export default defineEventHandler(async (event) => {
         totalUsers: { $sum: '$users' },
         totalPageViews: { $sum: '$screenPageViews' },
         totalNewUsers: { $sum: '$newUsers' },
-        avgBounceRate: { $avg: '$bounceRate' },
-        avgEngagementRate: { $avg: '$engagementRate' },
+        bounceSum: { $sum: { $multiply: ['$bounceRate', '$sessions'] } },
+        engagementSum: { $sum: { $multiply: ['$engagementRate', '$sessions'] } },
+        durationSum: { $sum: { $multiply: ['$avgSessionDurationSec', '$sessions'] } },
       },
     },
   ])
 
-  const totals = totalRows[0] ?? {
+  const t = totalRows[0] ?? {
     totalSessions: 0,
     totalUsers: 0,
     totalPageViews: 0,
     totalNewUsers: 0,
-    avgBounceRate: 0,
-    avgEngagementRate: 0,
+    bounceSum: 0,
+    engagementSum: 0,
+    durationSum: 0,
   }
+
+  const safeDivide = (num: number, den: number) => (den === 0 ? 0 : num / den)
 
   return {
     success: true,
@@ -95,12 +124,13 @@ export default defineEventHandler(async (event) => {
       dailyTotals,
       channelTotals,
       totals: {
-        sessions: totals.totalSessions,
-        users: totals.totalUsers,
-        pageViews: totals.totalPageViews,
-        newUsers: totals.totalNewUsers,
-        bounceRate: Math.round((totals.avgBounceRate ?? 0) * 1000) / 10, // as %
-        engagementRate: Math.round((totals.avgEngagementRate ?? 0) * 1000) / 10, // as %
+        sessions: t.totalSessions,
+        users: t.totalUsers,
+        pageViews: t.totalPageViews,
+        newUsers: t.totalNewUsers,
+        bounceRate: Math.round(safeDivide(t.bounceSum, t.totalSessions) * 1000) / 10,
+        engagementRate: Math.round(safeDivide(t.engagementSum, t.totalSessions) * 1000) / 10,
+        avgSessionDurationSec: Math.round(safeDivide(t.durationSum, t.totalSessions) * 10) / 10,
       },
     },
   }

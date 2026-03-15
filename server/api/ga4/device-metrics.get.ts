@@ -13,7 +13,8 @@ export default defineEventHandler(async (event) => {
 
   const range = String(query.range || '30d')
   const cutoff = new Date()
-  if (range === '90d') cutoff.setDate(cutoff.getDate() - 90)
+  if (range === '7d') cutoff.setDate(cutoff.getDate() - 7)
+  else if (range === '90d') cutoff.setDate(cutoff.getDate() - 90)
   else if (range === '180d') cutoff.setDate(cutoff.getDate() - 180)
   else cutoff.setDate(cutoff.getDate() - 30)
 
