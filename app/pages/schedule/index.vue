@@ -111,7 +111,7 @@
       <div class="bg-white shadow-sm rounded-lg p-5">
         <h2 class="text-sm font-semibold text-gray-900 mb-3">Pull Now</h2>
         <p class="text-sm text-gray-500 mb-4">Manually trigger a data pull for this property.</p>
-        <div class="flex gap-3">
+        <div class="flex flex-wrap gap-3">
           <button
             @click="pullTracked"
             :disabled="pulling.tracked"
@@ -125,6 +125,13 @@
             class="text-sm px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500 transition-colors disabled:opacity-50"
           >
             {{ pulling.bulk ? 'Pulling…' : 'Pull Bulk Keywords' }}
+          </button>
+          <button
+            @click="pullGa4"
+            :disabled="pulling.ga4"
+            class="text-sm px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500 transition-colors disabled:opacity-50"
+          >
+            {{ pulling.ga4 ? 'Pulling…' : 'Pull GA4 Data' }}
           </button>
         </div>
         <div v-if="pullMessage" class="text-sm mt-3" :class="pullError ? 'text-red-600' : 'text-green-600'">
@@ -240,7 +247,7 @@ const saving = ref(false)
 const saveError = ref('')
 const saveSuccess = ref(false)
 
-const pulling = ref({ tracked: false, bulk: false })
+const pulling = ref({ tracked: false, bulk: false, ga4: false })
 const pullMessage = ref('')
 const pullError = ref(false)
 
@@ -359,6 +366,26 @@ async function pullBulk() {
     pullError.value = true
   } finally {
     pulling.value.bulk = false
+  }
+}
+
+async function pullGa4() {
+  pulling.value.ga4 = true
+  pullMessage.value = ''
+  pullError.value = false
+  try {
+    const res = await $fetch<{ date: string; counts: Record<string, number> }>('/api/pull/ga4', {
+      method: 'POST',
+      body: { propertyId: selectedPropertyId.value },
+    })
+    pullMessage.value = `GA4 pull complete for ${res.date} — ${res.counts.pages} pages, ${res.counts.sources} sources, ${res.counts.devices} devices, ${res.counts.countries} countries.`
+    await loadProperties()
+  } catch (err: unknown) {
+    const e = err as { data?: { message?: string } }
+    pullMessage.value = e?.data?.message || 'GA4 pull failed'
+    pullError.value = true
+  } finally {
+    pulling.value.ga4 = false
   }
 }
 

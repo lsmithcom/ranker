@@ -115,6 +115,107 @@
         </ul>
       </div>
     </div>
+
+    <!-- GA4 Historical Import -->
+    <div class="mt-10 pt-8 border-t border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-900 mb-1">Import GA4 Historical Data</h2>
+      <p class="text-sm text-gray-500 mb-6">
+        Pull GA4 data day-by-day from a date range into the database. Each day is pulled individually
+        so large ranges won't time out.
+      </p>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Property</label>
+        <select
+          v-model="ga4PropertyId"
+          :disabled="ga4Importing"
+          class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 w-full max-w-sm"
+        >
+          <option value="">Select a property…</option>
+          <option v-for="p in properties" :key="p._id" :value="p._id">
+            {{ p.propertyName }} {{ (p as any).ga4PropertyId ? `(GA4: ${(p as any).ga4PropertyId})` : '(no GA4 ID)' }}
+          </option>
+        </select>
+      </div>
+
+      <div class="flex flex-wrap gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+          <input
+            v-model="ga4StartDate"
+            type="date"
+            :disabled="ga4Importing"
+            class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+          <input
+            v-model="ga4EndDate"
+            type="date"
+            :disabled="ga4Importing"
+            class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+          />
+        </div>
+      </div>
+
+      <p v-if="ga4DateCount > 0" class="text-sm text-gray-500 mb-4">
+        {{ ga4DateCount }} day{{ ga4DateCount === 1 ? '' : 's' }} will be pulled.
+      </p>
+
+      <button
+        :disabled="!canGa4Import"
+        class="px-4 py-2 bg-gray-900 text-white text-sm rounded hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        @click="runGa4Import"
+      >
+        {{ ga4Importing ? `Pulling day ${ga4Progress} of ${ga4DateCount}…` : 'Import GA4 History' }}
+      </button>
+
+      <!-- Progress bar -->
+      <div v-if="ga4Importing" class="mt-4 w-full max-w-md bg-gray-200 rounded-full h-2">
+        <div
+          class="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+          :style="{ width: ga4DateCount > 0 ? `${(ga4Progress / ga4DateCount) * 100}%` : '0%' }"
+        ></div>
+      </div>
+
+      <!-- GA4 import result -->
+      <div v-if="ga4Error" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <p class="text-sm text-red-600">{{ ga4Error }}</p>
+      </div>
+
+      <div v-if="ga4Results.length > 0 && !ga4Importing" class="mt-4 p-5 bg-white shadow-sm rounded-lg">
+        <p class="text-sm font-semibold text-gray-900 mb-3">
+          Import complete — {{ ga4results_success }} succeeded, {{ ga4results_failed }} failed
+        </p>
+        <div class="overflow-x-auto max-h-64 overflow-y-auto">
+          <table class="w-full text-xs">
+            <thead class="bg-gray-50 sticky top-0">
+              <tr>
+                <th class="text-left px-3 py-2 text-gray-500 uppercase">Date</th>
+                <th class="text-right px-3 py-2 text-gray-500 uppercase">Pages</th>
+                <th class="text-right px-3 py-2 text-gray-500 uppercase">Sources</th>
+                <th class="text-right px-3 py-2 text-gray-500 uppercase">Devices</th>
+                <th class="text-right px-3 py-2 text-gray-500 uppercase">Countries</th>
+                <th class="text-left px-3 py-2 text-gray-500 uppercase">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr v-for="r in ga4Results.slice().reverse()" :key="r.date" class="hover:bg-gray-50">
+                <td class="px-3 py-1.5 text-gray-600">{{ r.date }}</td>
+                <td class="px-3 py-1.5 text-right text-gray-800">{{ r.counts?.pages ?? '—' }}</td>
+                <td class="px-3 py-1.5 text-right text-gray-800">{{ r.counts?.sources ?? '—' }}</td>
+                <td class="px-3 py-1.5 text-right text-gray-800">{{ r.counts?.devices ?? '—' }}</td>
+                <td class="px-3 py-1.5 text-right text-gray-800">{{ r.counts?.countries ?? '—' }}</td>
+                <td class="px-3 py-1.5" :class="r.error ? 'text-red-600' : 'text-green-600'">
+                  {{ r.error || 'OK' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -209,6 +310,78 @@ async function runImport() {
   } finally {
     importing.value = false
   }
+}
+
+// ── GA4 Historical Import ─────────────────────────────────────────────────────
+
+const ga4PropertyId = ref('')
+const ga4Importing = ref(false)
+const ga4Progress = ref(0)
+const ga4Error = ref<string | null>(null)
+const ga4Results = ref<{ date: string; counts?: Record<string, number>; error?: string }[]>([])
+
+const ga4results_success = computed(() => ga4Results.value.filter((r) => !r.error).length)
+const ga4results_failed = computed(() => ga4Results.value.filter((r) => !!r.error).length)
+
+// Default: 90 days ago → yesterday
+const ga4StartDate = ref((() => {
+  const d = new Date()
+  d.setDate(d.getDate() - 90)
+  return d.toISOString().split('T')[0]
+})())
+const ga4EndDate = ref((() => {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return d.toISOString().split('T')[0]
+})())
+
+const ga4DateCount = computed(() => {
+  if (!ga4StartDate.value || !ga4EndDate.value) return 0
+  const start = new Date(ga4StartDate.value)
+  const end = new Date(ga4EndDate.value)
+  if (end < start) return 0
+  return Math.round((end.getTime() - start.getTime()) / 86400000) + 1
+})
+
+const canGa4Import = computed(
+  () => !!ga4PropertyId.value && ga4DateCount.value > 0 && !ga4Importing.value
+)
+
+function getDatesInRange(startStr: string, endStr: string): string[] {
+  const dates: string[] = []
+  const current = new Date(startStr)
+  const end = new Date(endStr)
+  while (current <= end) {
+    dates.push(current.toISOString().split('T')[0])
+    current.setDate(current.getDate() + 1)
+  }
+  return dates
+}
+
+async function runGa4Import() {
+  if (!canGa4Import.value) return
+  ga4Importing.value = true
+  ga4Error.value = null
+  ga4Results.value = []
+  ga4Progress.value = 0
+
+  const dates = getDatesInRange(ga4StartDate.value, ga4EndDate.value)
+
+  for (const date of dates) {
+    ga4Progress.value++
+    try {
+      const res = await $fetch<{ date: string; counts: Record<string, number> }>('/api/pull/ga4', {
+        method: 'POST',
+        body: { propertyId: ga4PropertyId.value, date },
+      })
+      ga4Results.value.push({ date: res.date, counts: res.counts })
+    } catch (err: unknown) {
+      const e = err as { data?: { message?: string } }
+      ga4Results.value.push({ date, error: e?.data?.message || 'Pull failed' })
+    }
+  }
+
+  ga4Importing.value = false
 }
 
 onMounted(loadProperties)
