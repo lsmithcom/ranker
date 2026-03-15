@@ -106,17 +106,46 @@
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Name</th>
-              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">URL</th>
               <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">GSC Site URL</th>
-              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Last Pulled</th>
+              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">GA4 Property ID</th>
+              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Last GSC Pull</th>
+              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Last GA4 Pull</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <tr v-for="prop in properties" :key="prop._id" class="hover:bg-gray-50">
+            <tr v-for="prop in properties" :key="prop._id">
               <td class="px-4 py-3 font-medium text-gray-800">{{ prop.propertyName }}</td>
-              <td class="px-4 py-3 text-gray-500">{{ prop.propertyUrl }}</td>
               <td class="px-4 py-3 text-gray-500 font-mono text-xs">{{ prop.gscSiteUrl }}</td>
-              <td class="px-4 py-3 text-gray-400">{{ prop.lastPulledAt ? formatDate(prop.lastPulledAt) : 'Never' }}</td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <input
+                    v-model="ga4EditValues[prop._id]"
+                    type="text"
+                    placeholder="e.g. 316754772"
+                    class="border border-gray-300 rounded px-2 py-1 text-xs w-32 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                  <button
+                    @click="saveGa4PropertyId(prop)"
+                    :disabled="ga4Saving[prop._id]"
+                    class="text-xs bg-gray-900 text-white px-2 py-1 rounded hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                  >
+                    {{ ga4Saving[prop._id] ? '...' : 'Save' }}
+                  </button>
+                  <button
+                    v-if="prop.ga4PropertyId"
+                    @click="triggerGa4Pull(prop)"
+                    :disabled="ga4PullLoading[prop._id]"
+                    class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  >
+                    {{ ga4PullLoading[prop._id] ? 'Pulling...' : 'Pull Now' }}
+                  </button>
+                </div>
+                <p v-if="ga4PullResult[prop._id]" class="text-xs mt-1" :class="ga4PullResult[prop._id].startsWith('Error') ? 'text-red-500' : 'text-green-600'">
+                  {{ ga4PullResult[prop._id] }}
+                </p>
+              </td>
+              <td class="px-4 py-3 text-gray-400 text-xs">{{ prop.lastPulledAt ? formatDate(prop.lastPulledAt) : 'Never' }}</td>
+              <td class="px-4 py-3 text-gray-400 text-xs">{{ prop.ga4LastPulledAt ? formatDate(prop.ga4LastPulledAt) : 'Never' }}</td>
             </tr>
           </tbody>
         </table>
@@ -134,6 +163,8 @@ interface Property {
   propertyUrl: string
   gscSiteUrl: string
   lastPulledAt: string | null
+  ga4PropertyId: string | null
+  ga4LastPulledAt: string | null
 }
 
 const route = useRoute()
@@ -147,6 +178,12 @@ const addingProperty = ref(false)
 const propertyError = ref('')
 const newProperty = reactive({ propertyName: '', propertyUrl: '', gscSiteUrl: '' })
 
+// GA4 property ID editing — keyed by property _id
+const ga4EditValues = ref<Record<string, string>>({})
+const ga4Saving = ref<Record<string, boolean>>({})
+const ga4PullLoading = ref<Record<string, boolean>>({})
+const ga4PullResult = ref<Record<string, string>>({})
+
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString()
 }
@@ -156,10 +193,48 @@ async function loadProperties() {
   try {
     const res = await $fetch<{ data: Property[] }>('/api/properties')
     properties.value = res.data
+    // Pre-populate GA4 edit fields with current values
+    for (const p of res.data) {
+      ga4EditValues.value[p._id] = p.ga4PropertyId || ''
+    }
   } catch {
     // silent
   } finally {
     propertiesLoading.value = false
+  }
+}
+
+async function saveGa4PropertyId(prop: Property) {
+  ga4Saving.value[prop._id] = true
+  try {
+    await $fetch(`/api/properties/${prop._id}`, {
+      method: 'PUT',
+      body: { ga4PropertyId: ga4EditValues.value[prop._id] || null },
+    })
+    prop.ga4PropertyId = ga4EditValues.value[prop._id] || null
+  } catch {
+    // silent — user can retry
+  } finally {
+    ga4Saving.value[prop._id] = false
+  }
+}
+
+async function triggerGa4Pull(prop: Property) {
+  ga4PullLoading.value[prop._id] = true
+  ga4PullResult.value[prop._id] = ''
+  try {
+    const res = await $fetch<{ date: string; counts: Record<string, number> }>('/api/pull/ga4', {
+      method: 'POST',
+      body: { propertyId: prop._id },
+    })
+    const c = res.counts
+    ga4PullResult.value[prop._id] = `Pulled ${res.date}: ${c.pages} pages, ${c.sources} sources, ${c.devices} devices, ${c.countries} countries`
+    prop.ga4LastPulledAt = new Date().toISOString()
+  } catch (err: unknown) {
+    const e = err as { data?: { message?: string } }
+    ga4PullResult.value[prop._id] = `Error: ${e?.data?.message || 'Pull failed'}`
+  } finally {
+    ga4PullLoading.value[prop._id] = false
   }
 }
 

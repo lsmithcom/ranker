@@ -7,6 +7,7 @@
  *   POST /api/auth/register       → 5 attempts per 60 min per IP
  *   POST /api/auth/forgot-password → 5 attempts per 60 min per IP
  *   POST /api/pull/*              → 20 attempts per 5 min per IP
+ *   GET  /api/ga4/*               → 60 requests per 1 min per IP
  *
  * Note: this store is per-process. For multi-instance deployments,
  * replace the Map with a shared store (Redis, etc.).
@@ -56,6 +57,7 @@ const RULES: { path: string; method: string; limit: number; windowMs: number }[]
   { path: '/api/auth/register',        method: 'POST', limit: 5,  windowMs: 60 * 60 * 1000 },
   { path: '/api/auth/forgot-password', method: 'POST', limit: 5,  windowMs: 60 * 60 * 1000 },
   { path: '/api/pull/',                method: 'POST', limit: 20, windowMs:  5 * 60 * 1000 },
+  { path: '/api/ga4/',                 method: 'GET',  limit: 60, windowMs:  1 * 60 * 1000 },
 ]
 
 export default defineEventHandler((event) => {

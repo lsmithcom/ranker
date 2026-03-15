@@ -28,6 +28,8 @@ export default defineNuxtConfig({
     },
     scheduledTasks: {
       '*/30 * * * *': ['cron:pull-rankings'],
+      // GA4 pulls once daily at 6 AM — yesterday's data is finalized by then
+      '0 6 * * *': ['cron:pull-ga4'],
     },
   },
 

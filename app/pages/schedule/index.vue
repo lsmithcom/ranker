@@ -132,7 +132,7 @@
         </div>
 
         <div class="mt-5 pt-5 border-t border-gray-100">
-          <p class="text-sm text-gray-500 mb-3">Test GSC API queries for this property.</p>
+          <p class="text-sm text-gray-500 mb-3">Test GSC and GA4 API queries.</p>
           <div class="flex gap-3">
             <NuxtLink
               to="/test/query"
@@ -145,6 +145,12 @@
               class="text-sm px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
             >
               Test Bulk
+            </NuxtLink>
+            <NuxtLink
+              to="/test/ga4"
+              class="text-sm px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+            >
+              Test GA4
             </NuxtLink>
           </div>
         </div>

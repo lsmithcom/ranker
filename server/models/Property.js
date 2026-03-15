@@ -44,6 +44,15 @@ const propertySchema = new mongoose.Schema({
     nextPullAt: Date,
     pullHour: { type: Number, default: 12 },
   },
+  // GA4 numeric property ID (e.g. "316754772") — set by user in Settings
+  ga4PropertyId: {
+    type: String,
+    trim: true,
+    default: null,
+  },
+  ga4LastPulledAt: {
+    type: Date,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

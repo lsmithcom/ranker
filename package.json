@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@google-cloud/bigquery": "^8.1.1",
     "@tailwindcss/vite": "^4.2.0",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",

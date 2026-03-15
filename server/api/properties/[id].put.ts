@@ -53,6 +53,7 @@ export default defineEventHandler(async (event) => {
 
   if (body.propertyName) updates.propertyName = body.propertyName
   if (body.isActive !== undefined) updates.isActive = body.isActive
+  if (body.ga4PropertyId !== undefined) updates.ga4PropertyId = body.ga4PropertyId || null
 
   updates.updatedAt = new Date()
 
