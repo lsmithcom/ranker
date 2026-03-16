@@ -48,13 +48,6 @@
                 GA4
               </NuxtLink>
               <NuxtLink
-                to="/schedule"
-                class="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                active-class="text-gray-900 font-medium"
-              >
-                Schedule
-              </NuxtLink>
-              <NuxtLink
                 to="/import"
                 class="text-sm text-gray-600 hover:text-gray-900 transition-colors"
                 active-class="text-gray-900 font-medium"
