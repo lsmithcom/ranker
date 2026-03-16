@@ -20,32 +20,18 @@
                 Dashboard
               </NuxtLink>
               <NuxtLink
-                to="/keywords"
+                to="/search"
                 class="text-sm text-gray-600 hover:text-gray-900 transition-colors"
                 active-class="text-gray-900 font-medium"
               >
-                Keywords
-              </NuxtLink>
-              <NuxtLink
-                to="/search-terms"
-                class="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                active-class="text-gray-900 font-medium"
-              >
-                Search Terms
-              </NuxtLink>
-              <NuxtLink
-                to="/pages"
-                class="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                active-class="text-gray-900 font-medium"
-              >
-                Pages
+                Search
               </NuxtLink>
               <NuxtLink
                 to="/ga4"
                 class="text-sm text-gray-600 hover:text-gray-900 transition-colors"
                 active-class="text-gray-900 font-medium"
               >
-                GA4
+                Analytics
               </NuxtLink>
               <NuxtLink
                 to="/import"

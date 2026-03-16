@@ -78,7 +78,7 @@
               <tr>
                 <td colspan="9" class="px-3 py-8 text-center text-gray-400">
                   No search terms found. Run a bulk pull from the
-                  <NuxtLink to="/schedule" class="text-indigo-600 hover:underline">Schedule</NuxtLink> page.
+                  <NuxtLink to="/import" class="text-indigo-600 hover:underline">Import</NuxtLink> page.
                 </td>
               </tr>
             </template>
