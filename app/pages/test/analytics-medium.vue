@@ -358,8 +358,18 @@ const trafficSources = ref<TrafficSource[]>([])
 const channelTrend = ref<ChannelTrend | null>(null)
 
 // ── Fetch properties ───────────────────────────────────────────────────────
-const { data: propertiesData } = await useFetch('/api/properties')
-properties.value = (propertiesData.value as any)?.properties ?? []
+async function loadProperties() {
+  try {
+    const res = await $fetch<{ data: any[] }>('/api/properties')
+    properties.value = res.data
+    if (properties.value.length) {
+      selectedPropertyId.value = properties.value[0]._id
+      loadData()
+    }
+  } catch {
+    // silent
+  }
+}
 
 // ── Load all data ──────────────────────────────────────────────────────────
 async function loadData() {
@@ -379,13 +389,8 @@ async function loadData() {
   }
 }
 
-watch([selectedPropertyId, range], loadData, { immediate: false })
-onMounted(() => {
-  if (properties.value.length) {
-    selectedPropertyId.value = properties.value[0]._id
-    loadData()
-  }
-})
+watch(range, () => { if (selectedPropertyId.value) loadData() })
+onMounted(loadProperties)
 
 // ── A4: Scatter plot ───────────────────────────────────────────────────────
 function median(arr: number[]): number {
