@@ -28,6 +28,8 @@ export default defineEventHandler(async (event) => {
         newUsers: { $sum: '$newUsers' },
         bounceRate: { $avg: '$bounceRate' },
         engagementRate: { $avg: '$engagementRate' },
+        conversions: { $sum: '$conversions' },
+        channelGroup: { $last: '$sessionDefaultChannelGroup' },
       },
     },
     { $sort: { sessions: -1 } },
@@ -42,6 +44,8 @@ export default defineEventHandler(async (event) => {
         newUsers: 1,
         bounceRate: { $round: ['$bounceRate', 4] },
         engagementRate: { $round: ['$engagementRate', 4] },
+        conversions: 1,
+        channelGroup: 1,
       },
     },
   ])

@@ -28,6 +28,10 @@ const schema = new mongoose.Schema({
   bounceRate: { type: Number, default: 0 },       // 0–1 fraction
   avgSessionDurationSec: { type: Number, default: 0 },
   engagementRate: { type: Number, default: 0 },   // 0–1 fraction
+  entrances: { type: Number, default: 0 },         // sessions that started on this page
+  exitRate: { type: Number, default: 0 },          // 0–1 fraction of pageviews that were the last in a session
+  scrolledUsers: { type: Number, default: 0 },     // users who scrolled past 90% of the page
+  conversions: { type: Number, default: 0 },        // total GA4 key events / conversions
   pulledAt: { type: Date, default: Date.now },
 })
 

@@ -22,11 +22,13 @@ const schema = new mongoose.Schema({
   sessionSource: { type: String, default: '(none)' },
   sessionMedium: { type: String, default: '(none)' },
   sessionCampaignName: { type: String, default: '(none)' },
+  sessionDefaultChannelGroup: { type: String, default: '(Other)' },
   sessions: { type: Number, default: 0 },
   users: { type: Number, default: 0 },
   newUsers: { type: Number, default: 0 },
   bounceRate: { type: Number, default: 0 },
   engagementRate: { type: Number, default: 0 },
+  conversions: { type: Number, default: 0 },        // total GA4 key events / conversions
   pulledAt: { type: Date, default: Date.now },
 })
 
