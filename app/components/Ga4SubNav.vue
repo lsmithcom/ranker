@@ -23,6 +23,8 @@ const tabs = [
   { label: 'Overview', to: '/ga4' },
   { label: 'Pages', to: '/ga4/pages' },
   { label: 'Sources', to: '/ga4/sources' },
+  { label: 'Audience', to: '/ga4/audience' },
+  { label: 'Conversions', to: '/ga4/conversions' },
 ]
 
 function isActive(to: string): boolean {
