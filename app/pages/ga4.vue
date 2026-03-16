@@ -64,7 +64,7 @@
             </div>
           </div>
           <div class="h-52">
-            <ClientOnly>
+            <ClientOnly :key="range">
               <Ga4LineChart
                 :labels="dateLabels"
                 :datasets="sessionsUsersDatasets"
@@ -108,7 +108,7 @@
           <h2 class="text-sm font-semibold text-gray-700 mb-1">Bounce Rate</h2>
           <div class="text-xs text-gray-400 mb-2">Lower is better</div>
           <div class="h-36">
-            <ClientOnly>
+            <ClientOnly :key="range">
               <Ga4LineChart
                 :labels="dateLabels"
                 :datasets="bounceRateDataset"
@@ -122,7 +122,7 @@
           <h2 class="text-sm font-semibold text-gray-700 mb-1">Engagement Rate</h2>
           <div class="text-xs text-gray-400 mb-2">Higher is better</div>
           <div class="h-36">
-            <ClientOnly>
+            <ClientOnly :key="range">
               <Ga4LineChart
                 :labels="dateLabels"
                 :datasets="engagementRateDataset"
@@ -136,7 +136,7 @@
           <h2 class="text-sm font-semibold text-gray-700 mb-1">Avg Session Duration</h2>
           <div class="text-xs text-gray-400 mb-2">In seconds</div>
           <div class="h-36">
-            <ClientOnly>
+            <ClientOnly :key="range">
               <Ga4LineChart
                 :labels="dateLabels"
                 :datasets="durationDataset"
@@ -152,7 +152,7 @@
         <div class="bg-white shadow-sm rounded p-4">
           <h2 class="text-sm font-semibold text-gray-700 mb-3">Page Views</h2>
           <div class="h-40">
-            <ClientOnly>
+            <ClientOnly :key="range">
               <Ga4LineChart
                 :labels="dateLabels"
                 :datasets="pageViewsDataset"
@@ -164,7 +164,7 @@
         <div class="bg-white shadow-sm rounded p-4">
           <h2 class="text-sm font-semibold text-gray-700 mb-3">New Users</h2>
           <div class="h-40">
-            <ClientOnly>
+            <ClientOnly :key="range">
               <Ga4LineChart
                 :labels="dateLabels"
                 :datasets="newUsersDataset"
