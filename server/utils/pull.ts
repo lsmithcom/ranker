@@ -3,22 +3,11 @@ import Property from '../models/Property.js'
 import TrackedKeyword from '../models/TrackedKeyword.js'
 import KeywordRanking from '../models/KeywordRanking.js'
 
-/**
- * Computes the next scheduled pull time based on frequency and current nextPullAt.
- */
-export function updateNextPullAt(property: {
-  pullSchedule: {
-    frequency: string
-    nextPullAt: Date
-    pullHour: number
-  }
-}): Date {
-  const { frequency, nextPullAt, pullHour } = property.pullSchedule
+function advanceSchedule(sched: { frequency: string; nextPullAt: Date; pullHour: number }): Date {
+  const { frequency, nextPullAt, pullHour } = sched
   const now = new Date()
   const base = new Date(nextPullAt)
 
-  // Keep advancing until the result is in the future, so stale nextPullAt
-  // values (e.g. a date from the past) always resolve to the next valid time.
   do {
     if (frequency === 'daily') {
       base.setDate(base.getDate() + 1)
@@ -33,6 +22,24 @@ export function updateNextPullAt(property: {
   } while (base <= now)
 
   return base
+}
+
+/**
+ * Computes the next scheduled GSC pull time.
+ */
+export function updateNextPullAt(property: {
+  pullSchedule: { frequency: string; nextPullAt: Date; pullHour: number }
+}): Date {
+  return advanceSchedule(property.pullSchedule)
+}
+
+/**
+ * Computes the next scheduled GA4 pull time.
+ */
+export function updateNextGa4PullAt(property: {
+  ga4PullSchedule: { frequency: string; nextPullAt: Date; pullHour: number }
+}): Date {
+  return advanceSchedule(property.ga4PullSchedule)
 }
 
 /**

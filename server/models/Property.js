@@ -53,6 +53,13 @@ const propertySchema = new mongoose.Schema({
   ga4LastPulledAt: {
     type: Date,
   },
+  ga4PullSchedule: {
+    isScheduled: { type: Boolean, default: false },
+    frequency: { type: String, enum: ['daily', 'weekly', 'monthly'], default: 'daily' },
+    startDate: Date,
+    nextPullAt: Date,
+    pullHour: { type: Number, default: 8 }, // UTC hour (default 8 UTC = ~1am PT)
+  },
   createdAt: {
     type: Date,
     default: Date.now,

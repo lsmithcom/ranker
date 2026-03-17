@@ -1,16 +1,19 @@
 import { pullGa4Data } from '../../utils/ga4'
+import { updateNextGa4PullAt } from '../../utils/pull'
 
 export default defineTask({
   meta: {
     name: 'cron:pull-ga4',
-    description: 'Daily pull of GA4 aggregated metrics for all properties with ga4PropertyId set',
+    description: 'Auto-pull GA4 metrics for scheduled properties',
   },
   async run() {
     const Property = (await import('../../models/Property.js')).default
 
-    // Find all active properties that have a GA4 property ID configured
+    const now = new Date()
     const properties = await Property.find({
-      ga4PropertyId: { $ne: null, $exists: true, $ne: '' },
+      'ga4PullSchedule.isScheduled': true,
+      'ga4PullSchedule.nextPullAt': { $lte: now },
+      ga4PropertyId: { $exists: true, $ne: null, $ne: '' },
       isActive: true,
     })
 
@@ -24,6 +27,16 @@ export default defineTask({
       } catch (err) {
         failed++
         console.error(`[cron:pull-ga4] Failed for property ${prop._id}:`, err)
+      }
+
+      // Always advance nextPullAt regardless of pull success, so a failed pull
+      // never leaves nextPullAt stuck in the past.
+      try {
+        prop.ga4PullSchedule.nextPullAt = updateNextGa4PullAt(prop)
+        prop.markModified('ga4PullSchedule')
+        await prop.save()
+      } catch (err) {
+        console.error(`[cron:pull-ga4] Failed to advance nextPullAt for property ${prop._id}:`, err)
       }
     }
 

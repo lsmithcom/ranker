@@ -51,6 +51,43 @@ export default defineEventHandler(async (event) => {
     updates.pullSchedule = sched
   }
 
+  // Update ga4PullSchedule if provided
+  if (body.ga4PullSchedule) {
+    const { frequency, startDate, pullHour, isScheduled } = body.ga4PullSchedule
+
+    const sched = property.ga4PullSchedule || {}
+
+    if (frequency) sched.frequency = frequency
+    if (pullHour !== undefined) sched.pullHour = pullHour
+    if (isScheduled !== undefined) sched.isScheduled = isScheduled
+
+    if (startDate) {
+      sched.startDate = new Date(startDate)
+      const next = new Date(startDate)
+      const hour = sched.pullHour ?? 8
+      next.setHours(hour, 0, 0, 0)
+
+      const now = new Date()
+      const freq: string = sched.frequency || 'daily'
+      while (next <= now) {
+        if (freq === 'daily') {
+          next.setDate(next.getDate() + 1)
+        } else if (freq === 'weekly') {
+          next.setDate(next.getDate() + 7)
+        } else if (freq === 'monthly') {
+          next.setMonth(next.getMonth() + 1)
+        } else {
+          break
+        }
+        next.setHours(hour, 0, 0, 0)
+      }
+
+      sched.nextPullAt = next
+    }
+
+    updates.ga4PullSchedule = sched
+  }
+
   if (body.propertyName) updates.propertyName = body.propertyName
   if (body.isActive !== undefined) updates.isActive = body.isActive
   if (body.ga4PropertyId !== undefined) updates.ga4PropertyId = body.ga4PropertyId || null
