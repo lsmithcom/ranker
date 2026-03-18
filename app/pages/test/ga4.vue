@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex items-center gap-4 mb-6">
-      <NuxtLink to="/schedule" class="text-sm text-gray-400 hover:text-gray-600">← Back</NuxtLink>
+      <NuxtLink to="/import" class="text-sm text-gray-400 hover:text-gray-600">← Back</NuxtLink>
       <h1 class="text-xl font-semibold">GA4 Integration Test</h1>
     </div>
 

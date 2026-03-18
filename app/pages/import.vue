@@ -19,50 +19,118 @@
       </div>
 
       <template v-if="selectedProperty">
-        <!-- Status card -->
-        <div class="bg-white shadow-sm rounded-lg p-5 mb-5">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-medium text-gray-700">Schedule Status</span>
-            <span
-              :class="[
-                'text-xs px-2 py-0.5 rounded-full font-medium',
-                selectedProperty.pullSchedule?.isScheduled
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-500',
-              ]"
-            >
-              {{ selectedProperty.pullSchedule?.isScheduled ? 'Active' : 'Inactive' }}
-            </span>
+        <!-- Dual status cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+          <!-- GSC status -->
+          <div class="bg-white shadow-sm rounded-lg p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-gray-700">Search Console</span>
+              <span
+                :class="[
+                  'text-xs px-2 py-0.5 rounded-full font-medium',
+                  selectedProperty.pullSchedule?.isScheduled
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-500',
+                ]"
+              >
+                {{ selectedProperty.pullSchedule?.isScheduled ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+            <dl class="grid grid-cols-1 gap-2 text-sm">
+              <div class="flex justify-between">
+                <dt class="text-gray-500">Frequency</dt>
+                <dd class="font-medium capitalize">{{ selectedProperty.pullSchedule?.frequency || '—' }}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-gray-500">Pull Hour</dt>
+                <dd class="font-medium">{{ formatPullHour(selectedProperty.pullSchedule?.pullHour) }}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-gray-500">Last Pulled</dt>
+                <dd class="font-medium">{{ formatDate(selectedProperty.lastPulledAt) }}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-gray-500">Next Pull</dt>
+                <dd class="font-medium">{{ formatDate(selectedProperty.pullSchedule?.nextPullAt) }}</dd>
+              </div>
+            </dl>
           </div>
-          <dl class="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <dt class="text-gray-500">Frequency</dt>
-              <dd class="font-medium capitalize">{{ selectedProperty.pullSchedule?.frequency || '—' }}</dd>
+
+          <!-- GA4 status -->
+          <div class="bg-white shadow-sm rounded-lg p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-gray-700">Google Analytics</span>
+              <span
+                :class="[
+                  'text-xs px-2 py-0.5 rounded-full font-medium',
+                  selectedProperty.ga4PullSchedule?.isScheduled
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-500',
+                ]"
+              >
+                {{ selectedProperty.ga4PullSchedule?.isScheduled ? 'Active' : 'Inactive' }}
+              </span>
             </div>
-            <div>
-              <dt class="text-gray-500">Pull Hour</dt>
-              <dd class="font-medium">{{ formatPullHour(selectedProperty.pullSchedule?.pullHour) }}</dd>
-            </div>
-            <div>
-              <dt class="text-gray-500">Last Pulled</dt>
-              <dd class="font-medium">{{ formatDate(selectedProperty.lastPulledAt) }}</dd>
-            </div>
-            <div>
-              <dt class="text-gray-500">Next Pull At</dt>
-              <dd class="font-medium">{{ formatDate(selectedProperty.pullSchedule?.nextPullAt) }}</dd>
-            </div>
-          </dl>
+            <dl class="grid grid-cols-1 gap-2 text-sm">
+              <div class="flex justify-between">
+                <dt class="text-gray-500">Frequency</dt>
+                <dd class="font-medium capitalize">{{ selectedProperty.ga4PullSchedule?.frequency || '—' }}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-gray-500">Pull Hour</dt>
+                <dd class="font-medium">{{ formatPullHour(selectedProperty.ga4PullSchedule?.pullHour) }}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-gray-500">Last Pulled</dt>
+                <dd class="font-medium">{{ formatDate(selectedProperty.ga4LastPulledAt) }}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-gray-500">Next Pull</dt>
+                <dd class="font-medium">{{ formatDate(selectedProperty.ga4PullSchedule?.nextPullAt) }}</dd>
+              </div>
+            </dl>
+          </div>
         </div>
 
-        <!-- Configure Schedule form -->
+        <!-- Configure Schedule with toggle tabs -->
         <div class="bg-white shadow-sm rounded-lg p-5">
-          <h3 class="text-sm font-semibold text-gray-900 mb-4">Configure Schedule</h3>
-          <form @submit.prevent="saveSchedule" class="space-y-4">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-gray-900">Configure Schedule</h3>
+            <div class="flex rounded-md border border-gray-200 overflow-hidden text-xs font-medium">
+              <button
+                type="button"
+                @click="activeTab = 'gsc'"
+                :class="[
+                  'px-3 py-1.5 transition-colors',
+                  activeTab === 'gsc'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50',
+                ]"
+              >
+                Search Console
+              </button>
+              <button
+                type="button"
+                @click="activeTab = 'ga4'"
+                :class="[
+                  'px-3 py-1.5 border-l border-gray-200 transition-colors',
+                  activeTab === 'ga4'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50',
+                ]"
+              >
+                Google Analytics
+              </button>
+            </div>
+          </div>
+
+          <!-- GSC form -->
+          <form v-if="activeTab === 'gsc'" @submit.prevent="saveGscSchedule" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
               <div class="flex gap-4">
                 <label v-for="opt in frequencies" :key="opt.value" class="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" v-model="scheduleForm.frequency" :value="opt.value" class="text-gray-900" />
+                  <input type="radio" v-model="gscForm.frequency" :value="opt.value" class="text-gray-900" />
                   <span class="text-sm">{{ opt.label }}</span>
                 </label>
               </div>
@@ -70,7 +138,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
               <input
-                v-model="scheduleForm.startDate"
+                v-model="gscForm.startDate"
                 type="date"
                 class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
               />
@@ -78,14 +146,14 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Pull Hour (Pacific Time)</label>
               <select
-                v-model="scheduleForm.pullHour"
+                v-model="gscForm.pullHour"
                 class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
               >
                 <option v-for="h in 24" :key="h - 1" :value="h - 1">{{ String(h - 1).padStart(2, '0') }}:00 PT</option>
               </select>
             </div>
-            <div v-if="saveError" class="text-sm text-red-600">{{ saveError }}</div>
-            <div v-if="saveSuccess" class="text-sm text-green-600">Schedule saved successfully.</div>
+            <div v-if="gscSaveError" class="text-sm text-red-600">{{ gscSaveError }}</div>
+            <div v-if="gscSaveSuccess" class="text-sm text-green-600">GSC schedule saved successfully.</div>
             <div class="flex gap-3 pt-1">
               <button
                 type="submit"
@@ -96,7 +164,60 @@
               </button>
               <button
                 type="button"
-                @click="disableSchedule"
+                @click="disableGscSchedule"
+                :disabled="saving"
+                class="text-sm px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Disable Schedule
+              </button>
+            </div>
+          </form>
+
+          <!-- GA4 form -->
+          <form v-else @submit.prevent="saveGa4Schedule" class="space-y-4">
+            <p v-if="!selectedProperty.ga4PropertyId" class="text-sm text-amber-600">
+              No GA4 Property ID is set for this property. Configure it in
+              <NuxtLink to="/settings" class="underline">Settings</NuxtLink> first.
+            </p>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
+              <div class="flex gap-4">
+                <label v-for="opt in frequencies" :key="opt.value" class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" v-model="ga4Form.frequency" :value="opt.value" class="text-gray-900" />
+                  <span class="text-sm">{{ opt.label }}</span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <input
+                v-model="ga4Form.startDate"
+                type="date"
+                class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Pull Hour (Pacific Time)</label>
+              <select
+                v-model="ga4Form.pullHour"
+                class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+              >
+                <option v-for="h in 24" :key="h - 1" :value="h - 1">{{ String(h - 1).padStart(2, '0') }}:00 PT</option>
+              </select>
+            </div>
+            <div v-if="ga4SaveError" class="text-sm text-red-600">{{ ga4SaveError }}</div>
+            <div v-if="ga4SaveSuccess" class="text-sm text-green-600">GA4 schedule saved successfully.</div>
+            <div class="flex gap-3 pt-1">
+              <button
+                type="submit"
+                :disabled="saving"
+                class="text-sm px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                {{ saving ? 'Saving…' : 'Save Schedule' }}
+              </button>
+              <button
+                type="button"
+                @click="disableGa4Schedule"
                 :disabled="saving"
                 class="text-sm px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
@@ -211,7 +332,7 @@
         <div class="mb-5">
           <label class="block text-sm font-medium text-gray-700 mb-1">Property</label>
           <select
-            v-model="ga4PropertyId"
+            v-model="ga4ImportPropertyId"
             :disabled="ga4Importing"
             class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 w-full max-w-sm"
           >
@@ -324,7 +445,7 @@
             {{ pulling.bulk ? 'Pulling…' : 'Pull Bulk Keywords' }}
           </button>
           <button
-            @click="pullGa4"
+            @click="pullGa4Now"
             :disabled="!selectedPropertyId || pulling.ga4"
             class="text-sm px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500 transition-colors disabled:opacity-50"
           >
@@ -361,17 +482,22 @@ definePageMeta({ middleware: 'auth' })
 
 // ── Types ─────────────────────────────────────────────────────────
 
+interface PullSchedule {
+  isScheduled: boolean
+  frequency: string
+  pullHour: number
+  startDate?: string
+  nextPullAt?: string
+}
+
 interface Property {
   _id: string
   propertyName: string
+  ga4PropertyId?: string | null
   lastPulledAt?: string
-  pullSchedule?: {
-    isScheduled: boolean
-    frequency: string
-    pullHour: number
-    startDate?: string
-    nextPullAt?: string
-  }
+  ga4LastPulledAt?: string
+  pullSchedule?: PullSchedule
+  ga4PullSchedule?: PullSchedule
 }
 
 interface ImportResults {
@@ -381,21 +507,7 @@ interface ImportResults {
   warnings: string[]
 }
 
-// ── Shared ────────────────────────────────────────────────────────
-
-const properties = ref<Property[]>([])
-
-async function loadProperties() {
-  const data = await $fetch<{ success: boolean; data: Property[] }>('/api/properties')
-  properties.value = data.data || []
-  if (properties.value.length === 1) {
-    selectedPropertyId.value = properties.value[0]._id
-    excelPropertyId.value = properties.value[0]._id
-    ga4PropertyId.value = properties.value[0]._id
-  }
-}
-
-// ── Pull Schedule ─────────────────────────────────────────────────
+// ── Timezone helpers ───────────────────────────────────────────────
 
 const PT = 'America/Los_Angeles'
 
@@ -425,7 +537,25 @@ function formatPullHour(pullHour?: number | null) {
   return String(ptHour).padStart(2, '0') + ':00 PT'
 }
 
+// ── Shared state ──────────────────────────────────────────────────
+
+const properties = ref<Property[]>([])
+
+async function loadProperties() {
+  const data = await $fetch<{ success: boolean; data: Property[] }>('/api/properties')
+  properties.value = data.data || []
+  if (properties.value.length === 1) {
+    selectedPropertyId.value = properties.value[0]._id
+    excelPropertyId.value = properties.value[0]._id
+    ga4ImportPropertyId.value = properties.value[0]._id
+  }
+}
+
+// ── Pull Schedule ─────────────────────────────────────────────────
+
 const selectedPropertyId = ref('')
+const activeTab = ref<'gsc' | 'ga4'>('gsc')
+
 const selectedProperty = computed(() =>
   properties.value.find((p) => p._id === selectedPropertyId.value) ?? null
 )
@@ -434,50 +564,59 @@ const tomorrow = new Date()
 tomorrow.setDate(tomorrow.getDate() + 1)
 const tomorrowStr = tomorrow.toISOString().split('T')[0]
 
-const scheduleForm = ref({
-  frequency: 'daily',
-  startDate: tomorrowStr,
-  pullHour: 11,
-})
-
 const frequencies = [
   { label: 'Daily', value: 'daily' },
   { label: 'Weekly', value: 'weekly' },
   { label: 'Monthly', value: 'monthly' },
 ]
 
+const gscForm = ref({ frequency: 'daily', startDate: tomorrowStr, pullHour: 11 })
+const ga4Form = ref({ frequency: 'daily', startDate: tomorrowStr, pullHour: 1 })
+
 const saving = ref(false)
-const saveError = ref('')
-const saveSuccess = ref(false)
+const gscSaveError = ref('')
+const gscSaveSuccess = ref(false)
+const ga4SaveError = ref('')
+const ga4SaveSuccess = ref(false)
 
 watch(selectedPropertyId, () => {
-  saveSuccess.value = false
-  saveError.value = ''
+  gscSaveSuccess.value = false
+  gscSaveError.value = ''
+  ga4SaveSuccess.value = false
+  ga4SaveError.value = ''
   pullMessage.value = ''
+
   const p = selectedProperty.value
   if (p?.pullSchedule) {
-    scheduleForm.value.frequency = p.pullSchedule.frequency || 'daily'
-    scheduleForm.value.pullHour = utcHourToPacific(p.pullSchedule.pullHour ?? 18)
-    scheduleForm.value.startDate = p.pullSchedule.startDate
+    gscForm.value.frequency = p.pullSchedule.frequency || 'daily'
+    gscForm.value.pullHour = utcHourToPacific(p.pullSchedule.pullHour ?? 18)
+    gscForm.value.startDate = p.pullSchedule.startDate
       ? new Date(p.pullSchedule.startDate).toISOString().split('T')[0]
+      : tomorrowStr
+  }
+  if (p?.ga4PullSchedule) {
+    ga4Form.value.frequency = p.ga4PullSchedule.frequency || 'daily'
+    ga4Form.value.pullHour = utcHourToPacific(p.ga4PullSchedule.pullHour ?? 8)
+    ga4Form.value.startDate = p.ga4PullSchedule.startDate
+      ? new Date(p.ga4PullSchedule.startDate).toISOString().split('T')[0]
       : tomorrowStr
   }
 })
 
-async function saveSchedule() {
+async function saveGscSchedule() {
   saving.value = true
-  saveError.value = ''
-  saveSuccess.value = false
+  gscSaveError.value = ''
+  gscSaveSuccess.value = false
   try {
-    const utcHour = pacificHourToUtc(Number(scheduleForm.value.pullHour))
+    const utcHour = pacificHourToUtc(Number(gscForm.value.pullHour))
     const result = await $fetch<{ success: boolean; data: Property }>(
       `/api/properties/${selectedPropertyId.value}`,
       {
         method: 'PUT',
         body: {
           pullSchedule: {
-            frequency: scheduleForm.value.frequency,
-            startDate: scheduleForm.value.startDate,
+            frequency: gscForm.value.frequency,
+            startDate: gscForm.value.startDate,
             pullHour: utcHour,
             isScheduled: true,
           },
@@ -486,19 +625,19 @@ async function saveSchedule() {
     )
     const idx = properties.value.findIndex((p) => p._id === selectedPropertyId.value)
     if (idx >= 0) properties.value.splice(idx, 1, result.data)
-    saveSuccess.value = true
+    gscSaveSuccess.value = true
   } catch (err: unknown) {
     const e = err as { data?: { message?: string } }
-    saveError.value = e?.data?.message || 'Failed to save schedule'
+    gscSaveError.value = e?.data?.message || 'Failed to save schedule'
   } finally {
     saving.value = false
   }
 }
 
-async function disableSchedule() {
+async function disableGscSchedule() {
   saving.value = true
-  saveError.value = ''
-  saveSuccess.value = false
+  gscSaveError.value = ''
+  gscSaveSuccess.value = false
   try {
     const result = await $fetch<{ success: boolean; data: Property }>(
       `/api/properties/${selectedPropertyId.value}`,
@@ -506,10 +645,61 @@ async function disableSchedule() {
     )
     const idx = properties.value.findIndex((p) => p._id === selectedPropertyId.value)
     if (idx >= 0) properties.value.splice(idx, 1, result.data)
-    saveSuccess.value = true
+    gscSaveSuccess.value = true
   } catch (err: unknown) {
     const e = err as { data?: { message?: string } }
-    saveError.value = e?.data?.message || 'Failed to disable schedule'
+    gscSaveError.value = e?.data?.message || 'Failed to disable schedule'
+  } finally {
+    saving.value = false
+  }
+}
+
+async function saveGa4Schedule() {
+  saving.value = true
+  ga4SaveError.value = ''
+  ga4SaveSuccess.value = false
+  try {
+    const utcHour = pacificHourToUtc(Number(ga4Form.value.pullHour))
+    const result = await $fetch<{ success: boolean; data: Property }>(
+      `/api/properties/${selectedPropertyId.value}`,
+      {
+        method: 'PUT',
+        body: {
+          ga4PullSchedule: {
+            frequency: ga4Form.value.frequency,
+            startDate: ga4Form.value.startDate,
+            pullHour: utcHour,
+            isScheduled: true,
+          },
+        },
+      }
+    )
+    const idx = properties.value.findIndex((p) => p._id === selectedPropertyId.value)
+    if (idx >= 0) properties.value.splice(idx, 1, result.data)
+    ga4SaveSuccess.value = true
+  } catch (err: unknown) {
+    const e = err as { data?: { message?: string } }
+    ga4SaveError.value = e?.data?.message || 'Failed to save GA4 schedule'
+  } finally {
+    saving.value = false
+  }
+}
+
+async function disableGa4Schedule() {
+  saving.value = true
+  ga4SaveError.value = ''
+  ga4SaveSuccess.value = false
+  try {
+    const result = await $fetch<{ success: boolean; data: Property }>(
+      `/api/properties/${selectedPropertyId.value}`,
+      { method: 'PUT', body: { ga4PullSchedule: { isScheduled: false } } }
+    )
+    const idx = properties.value.findIndex((p) => p._id === selectedPropertyId.value)
+    if (idx >= 0) properties.value.splice(idx, 1, result.data)
+    ga4SaveSuccess.value = true
+  } catch (err: unknown) {
+    const e = err as { data?: { message?: string } }
+    ga4SaveError.value = e?.data?.message || 'Failed to disable GA4 schedule'
   } finally {
     saving.value = false
   }
@@ -585,7 +775,7 @@ async function runImport() {
 
 // ── GA4 Historical Import ─────────────────────────────────────────
 
-const ga4PropertyId = ref('')
+const ga4ImportPropertyId = ref('')
 const ga4Importing = ref(false)
 const ga4Progress = ref(0)
 const ga4Error = ref<string | null>(null)
@@ -614,7 +804,7 @@ const ga4DateCount = computed(() => {
 })
 
 const canGa4Import = computed(
-  () => !!ga4PropertyId.value && ga4DateCount.value > 0 && !ga4Importing.value
+  () => !!ga4ImportPropertyId.value && ga4DateCount.value > 0 && !ga4Importing.value
 )
 
 function getDatesInRange(startStr: string, endStr: string): string[] {
@@ -640,7 +830,7 @@ async function runGa4Import() {
     try {
       const res = await $fetch<{ date: string; counts: Record<string, number> }>('/api/pull/ga4', {
         method: 'POST',
-        body: { propertyId: ga4PropertyId.value, date },
+        body: { propertyId: ga4ImportPropertyId.value, date },
       })
       ga4Results.value.push({ date: res.date, counts: res.counts })
     } catch (err: unknown) {
@@ -691,7 +881,7 @@ async function pullBulk() {
   }
 }
 
-async function pullGa4() {
+async function pullGa4Now() {
   pulling.value.ga4 = true
   pullMessage.value = ''
   pullError.value = false
