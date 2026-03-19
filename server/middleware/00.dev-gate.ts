@@ -3,7 +3,7 @@ export default defineEventHandler((event) => {
   if (!passcode) return // disabled in production
 
   const path = getRequestURL(event).pathname
-  if (path === '/dev-gate' || path === '/api/dev-gate') return
+  if (path === '/dev-gate') return
 
   const cookie = getCookie(event, 'dev_access')
   if (cookie === passcode) return
