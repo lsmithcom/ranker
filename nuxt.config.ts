@@ -44,6 +44,7 @@ export default defineNuxtConfig({
     smtp2goFromEmail: process.env.SMTP2GO_FROM_EMAIL,
     smtp2goFromName: process.env.SMTP2GO_FROM_NAME,
     siteUrl: process.env.SITE_URL,
+    devPasscode: process.env.DEV_PASSCODE,
     public: {},
   },
 
