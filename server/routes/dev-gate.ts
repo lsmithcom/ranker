@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
       })
       return sendRedirect(event, '/')
     }
