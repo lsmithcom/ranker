@@ -692,7 +692,7 @@ async function loadData() {
   if (!selectedPropertyId.value) return
   dataLoading.value = true
   try {
-    const [kwRes, bulkRes] = await Promise.all([
+    const [kwResult, bulkResult] = await Promise.allSettled([
       $fetch<{ data: Keyword[] }>('/api/keywords', {
         query: { propertyId: selectedPropertyId.value },
       }),
@@ -700,11 +700,8 @@ async function loadData() {
         query: { propertyId: selectedPropertyId.value, pageSize: 5000 },
       }),
     ])
-    keywords.value = kwRes.data || []
-    bulkTerms.value = bulkRes.data || []
-  } catch {
-    keywords.value = []
-    bulkTerms.value = []
+    keywords.value = kwResult.status === 'fulfilled' ? (kwResult.value.data || []) : []
+    bulkTerms.value = bulkResult.status === 'fulfilled' ? (bulkResult.value.data || []) : []
   } finally {
     dataLoading.value = false
   }

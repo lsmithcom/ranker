@@ -5,6 +5,8 @@ import Ga4PageMetric from '../models/Ga4PageMetric.js'
 import Ga4TrafficSource from '../models/Ga4TrafficSource.js'
 import Ga4DeviceMetric from '../models/Ga4DeviceMetric.js'
 import Ga4GeoMetric from '../models/Ga4GeoMetric.js'
+import Ga4EcommerceSummary from '../models/Ga4EcommerceSummary.js'
+import Ga4EcommerceItem from '../models/Ga4EcommerceItem.js'
 
 /**
  * Creates an authenticated GA4 Data API client for a user.
@@ -101,6 +103,8 @@ export async function pullGa4Data(userId: string, propertyId: string, targetDate
           { name: 'engagementRate' },
           { name: 'scrolledUsers' },
           { name: 'conversions' },
+          { name: 'entrances' },
+          { name: 'exitRate' },
         ],
         limit: pageRowLimit,
         offset: pageOffset,
@@ -127,6 +131,8 @@ export async function pullGa4Data(userId: string, propertyId: string, targetDate
             engagementRate: parseFloat(m[6]?.value || '0'),
             scrolledUsers: parseInt(m[7]?.value || '0'),
             conversions: parseInt(m[8]?.value || '0'),
+            entrances: parseInt(m[9]?.value || '0'),
+            exitRate: parseFloat(m[10]?.value || '0'),
             pulledAt: new Date(),
           },
         },
@@ -248,6 +254,80 @@ export async function pullGa4Data(userId: string, propertyId: string, targetDate
         $set: {
           sessions: parseInt(m[0]?.value || '0'),
           users: parseInt(m[1]?.value || '0'),
+          pulledAt: new Date(),
+        },
+      },
+      { upsert: true },
+    )
+  }
+
+  // ── E-commerce Summary (daily totals) ─────────────────────────────────────
+  const ecomSummaryRes = await analyticsData.properties.runReport({
+    property: ga4PropertyPath,
+    requestBody: {
+      dateRanges,
+      metrics: [
+        { name: 'totalRevenue' },
+        { name: 'ecommercePurchases' },
+        { name: 'itemsPurchased' },
+        { name: 'addToCarts' },
+      ],
+      limit: 1,
+    },
+  })
+
+  const ecomRow = ecomSummaryRes.data.rows?.[0]
+  if (ecomRow) {
+    const m = ecomRow.metricValues || []
+    await (Ga4EcommerceSummary as any).findOneAndUpdate(
+      { ...baseFields },
+      {
+        $set: {
+          totalRevenue: parseFloat(m[0]?.value || '0'),
+          purchases: parseInt(m[1]?.value || '0'),
+          itemsPurchased: parseInt(m[2]?.value || '0'),
+          addToCarts: parseInt(m[3]?.value || '0'),
+          pulledAt: new Date(),
+        },
+      },
+      { upsert: true },
+    )
+  }
+
+  // ── E-commerce Items (per-item daily breakdown) ────────────────────────────
+  const ecomItemRes = await analyticsData.properties.runReport({
+    property: ga4PropertyPath,
+    requestBody: {
+      dateRanges,
+      dimensions: [
+        { name: 'itemId' },
+        { name: 'itemName' },
+        { name: 'itemCategory' },
+      ],
+      metrics: [
+        { name: 'itemRevenue' },
+        { name: 'itemsPurchased' },
+        { name: 'itemsAddedToCart' },
+        { name: 'itemsViewed' },
+      ],
+      limit: 5000,
+    },
+  })
+
+  for (const row of ecomItemRes.data.rows || []) {
+    const d = row.dimensionValues || []
+    const m = row.metricValues || []
+
+    await (Ga4EcommerceItem as any).findOneAndUpdate(
+      { ...baseFields, itemId: d[0]?.value || '(not set)' },
+      {
+        $set: {
+          itemName: d[1]?.value || '',
+          itemCategory: d[2]?.value || '',
+          itemRevenue: parseFloat(m[0]?.value || '0'),
+          itemsPurchased: parseInt(m[1]?.value || '0'),
+          itemsAddedToCart: parseInt(m[2]?.value || '0'),
+          itemsViewed: parseInt(m[3]?.value || '0'),
           pulledAt: new Date(),
         },
       },

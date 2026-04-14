@@ -17,9 +17,14 @@ export default defineTask({
     for (const prop of properties) {
       try {
         await pullTrackedKeywords(String(prop.userId), String(prop._id))
+      } catch (err) {
+        console.error(`[cron] pullTrackedKeywords failed for property ${prop._id}:`, err)
+      }
+
+      try {
         await pullBulkKeywords(String(prop.userId), String(prop._id))
       } catch (err) {
-        console.error(`[cron] Failed to pull rankings for property ${prop._id}:`, err)
+        console.error(`[cron] pullBulkKeywords failed for property ${prop._id}:`, err)
       }
 
       // Always advance nextPullAt regardless of whether the pull succeeded,

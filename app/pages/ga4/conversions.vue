@@ -164,31 +164,15 @@
       <section class="mb-6">
         <h2 class="text-base font-semibold text-gray-800 mb-1">Revenue &amp; E-commerce</h2>
         <p class="text-xs text-gray-500 mb-3">Requires GA4 e-commerce tracking (purchase events, revenue values) to be configured on the site.</p>
-        <div class="bg-white shadow-sm rounded-lg p-8">
+
+        <!-- No e-commerce data yet -->
+        <div v-if="!hasRevenue" class="bg-white shadow-sm rounded-lg p-8">
           <div class="max-w-xl mx-auto text-center">
             <div class="text-5xl text-gray-200 mb-4">💰</div>
             <p class="text-sm font-semibold text-gray-700 mb-2">E-commerce tracking not detected</p>
             <p class="text-xs text-gray-400 mb-6 max-w-sm mx-auto">
               No <code class="bg-gray-100 px-1 rounded">purchase</code> or revenue events found for this period.
             </p>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 opacity-35 select-none mb-6">
-              <div class="border border-gray-200 rounded-lg p-3 text-center">
-                <div class="text-lg font-bold text-gray-700">$0</div>
-                <div class="text-xs text-gray-400 mt-0.5">Total Revenue</div>
-              </div>
-              <div class="border border-gray-200 rounded-lg p-3 text-center">
-                <div class="text-lg font-bold text-gray-700">0</div>
-                <div class="text-xs text-gray-400 mt-0.5">Transactions</div>
-              </div>
-              <div class="border border-gray-200 rounded-lg p-3 text-center">
-                <div class="text-lg font-bold text-gray-700">$0</div>
-                <div class="text-xs text-gray-400 mt-0.5">Avg Order Value</div>
-              </div>
-              <div class="border border-gray-200 rounded-lg p-3 text-center">
-                <div class="text-lg font-bold text-gray-700">0%</div>
-                <div class="text-xs text-gray-400 mt-0.5">Purchase Rate</div>
-              </div>
-            </div>
             <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-amber-800 text-left">
               <strong>To enable:</strong> Add GA4 e-commerce events (<code>purchase</code>, <code>add_to_cart</code>, <code>view_item</code>)
               via Google Tag Manager or gtag.js. Revenue metrics (<code>totalRevenue</code>, <code>ecommercePurchases</code>)
@@ -196,6 +180,86 @@
             </div>
           </div>
         </div>
+
+        <!-- Live e-commerce data -->
+        <template v-else>
+          <!-- KPI cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div class="bg-white shadow-sm rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-green-700">${{ ecommerceSummary.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+              <div class="text-xs text-gray-400 mt-0.5">Total Revenue</div>
+            </div>
+            <div class="bg-white shadow-sm rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-gray-800">{{ ecommerceSummary.purchases.toLocaleString() }}</div>
+              <div class="text-xs text-gray-400 mt-0.5">Transactions</div>
+            </div>
+            <div class="bg-white shadow-sm rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-gray-800">${{ ecommerceSummary.avgOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+              <div class="text-xs text-gray-400 mt-0.5">Avg Order Value</div>
+            </div>
+            <div class="bg-white shadow-sm rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold" :class="purchaseRate >= 2 ? 'text-green-600' : purchaseRate >= 1 ? 'text-amber-600' : 'text-gray-600'">
+                {{ purchaseRate.toFixed(2) }}%
+              </div>
+              <div class="text-xs text-gray-400 mt-0.5">Purchase Rate</div>
+            </div>
+          </div>
+
+          <!-- Add to cart funnel hint -->
+          <div class="bg-white shadow-sm rounded-lg p-4 mb-4 flex items-center gap-6 text-sm">
+            <div class="text-center">
+              <div class="text-lg font-semibold text-gray-800">{{ ecommerceSummary.addToCarts.toLocaleString() }}</div>
+              <div class="text-xs text-gray-400 mt-0.5">Add to Carts</div>
+            </div>
+            <div class="text-gray-300 text-xl">→</div>
+            <div class="text-center">
+              <div class="text-lg font-semibold text-gray-800">{{ ecommerceSummary.purchases.toLocaleString() }}</div>
+              <div class="text-xs text-gray-400 mt-0.5">Purchases</div>
+            </div>
+            <div class="text-gray-300 text-xl">→</div>
+            <div class="text-center">
+              <div class="text-lg font-semibold" :class="cartToOrderRate >= 50 ? 'text-green-600' : cartToOrderRate >= 25 ? 'text-amber-600' : 'text-red-500'">
+                {{ cartToOrderRate.toFixed(1) }}%
+              </div>
+              <div class="text-xs text-gray-400 mt-0.5">Cart → Order Rate</div>
+            </div>
+          </div>
+
+          <!-- Top items table -->
+          <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+            <div class="px-4 py-3 border-b border-gray-100">
+              <p class="text-xs font-medium text-gray-600">Top Products by Revenue</p>
+            </div>
+            <table class="w-full text-xs">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-4 py-2.5 text-left font-medium text-gray-500 uppercase">Product</th>
+                  <th class="px-4 py-2.5 text-left font-medium text-gray-500 uppercase">Category</th>
+                  <th class="px-4 py-2.5 text-right font-medium text-gray-500 uppercase">Revenue</th>
+                  <th class="px-4 py-2.5 text-right font-medium text-gray-500 uppercase">Purchased</th>
+                  <th class="px-4 py-2.5 text-right font-medium text-gray-500 uppercase">Add to Cart</th>
+                  <th class="px-4 py-2.5 text-right font-medium text-gray-500 uppercase">Viewed</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-50">
+                <tr v-for="item in ecommerceItems" :key="item.itemId" class="hover:bg-gray-50">
+                  <td class="px-4 py-2 text-gray-800 font-medium truncate max-w-xs" :title="item.itemName || item.itemId">
+                    {{ item.itemName || item.itemId || '(not set)' }}
+                  </td>
+                  <td class="px-4 py-2 text-gray-500 truncate max-w-32" :title="item.itemCategory">{{ item.itemCategory || '—' }}</td>
+                  <td class="px-4 py-2 text-right font-semibold text-green-700">
+                    ${{ item.itemRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                  </td>
+                  <td class="px-4 py-2 text-right text-gray-700">{{ item.itemsPurchased.toLocaleString() }}</td>
+                  <td class="px-4 py-2 text-right text-gray-600">{{ item.itemsAddedToCart.toLocaleString() }}</td>
+                  <td class="px-4 py-2 text-right" :class="item.itemsViewed === 0 ? 'text-gray-300' : 'text-gray-600'">
+                    {{ item.itemsViewed > 0 ? item.itemsViewed.toLocaleString() : '—' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
       </section>
 
     </template>
@@ -217,6 +281,13 @@ interface PageMetric {
 interface TrafficSource {
   source: string; medium: string; sessions: number; conversions: number; channelGroup: string
 }
+interface EcommerceSummary {
+  totalRevenue: number; purchases: number; itemsPurchased: number; addToCarts: number; avgOrderValue: number
+}
+interface EcommerceItem {
+  itemId: string; itemName: string; itemCategory: string
+  itemRevenue: number; itemsPurchased: number; itemsAddedToCart: number; itemsViewed: number
+}
 
 const CHANNEL_COLORS = [
   '#22c55e', '#3b82f6', '#a855f7', '#ec4899',
@@ -237,6 +308,8 @@ const loaded = ref(false)
 const error = ref('')
 const pageMetrics = ref<PageMetric[]>([])
 const trafficSources = ref<TrafficSource[]>([])
+const ecommerceSummary = ref<EcommerceSummary>({ totalRevenue: 0, purchases: 0, itemsPurchased: 0, addToCarts: 0, avgOrderValue: 0 })
+const ecommerceItems = ref<EcommerceItem[]>([])
 
 function mediumToChannel(medium: string): string {
   const m = (medium || '').toLowerCase()
@@ -259,6 +332,14 @@ const totalSessions = computed(() => pageMetrics.value.reduce((s, p) => s + p.se
 const totalConversions = computed(() => pageMetrics.value.reduce((s, p) => s + p.conversions, 0))
 const overallConvRate = computed(() =>
   totalSessions.value > 0 ? (totalConversions.value / totalSessions.value) * 100 : 0
+)
+
+const hasRevenue = computed(() => ecommerceSummary.value.totalRevenue > 0 || ecommerceSummary.value.purchases > 0)
+const purchaseRate = computed(() =>
+  totalSessions.value > 0 ? (ecommerceSummary.value.purchases / totalSessions.value) * 100 : 0
+)
+const cartToOrderRate = computed(() =>
+  ecommerceSummary.value.addToCarts > 0 ? (ecommerceSummary.value.purchases / ecommerceSummary.value.addToCarts) * 100 : 0
 )
 
 // C1: Conversions per page
@@ -313,12 +394,15 @@ async function load() {
   try {
     const pid = selectedPropertyId.value
     const r = range.value
-    const [pm, ts] = await Promise.all([
+    const [pm, ts, ec] = await Promise.all([
       $fetch<{ data: PageMetric[] }>(`/api/ga4/page-metrics?propertyId=${pid}&range=${r}&limit=500`),
       $fetch<{ data: TrafficSource[] }>(`/api/ga4/traffic-sources?propertyId=${pid}&range=${r}`),
+      $fetch<{ summary: EcommerceSummary; items: EcommerceItem[] }>(`/api/ga4/ecommerce?propertyId=${pid}&range=${r}`),
     ])
     pageMetrics.value = pm.data
     trafficSources.value = ts.data
+    ecommerceSummary.value = ec.summary
+    ecommerceItems.value = ec.items
     loaded.value = true
   } catch (err: unknown) {
     const e = err as { data?: { message?: string } }

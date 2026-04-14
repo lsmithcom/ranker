@@ -16,7 +16,9 @@ export default defineEventHandler(async (event) => {
   const propertyId = new mongoose.Types.ObjectId(String(query.propertyId))
   const userId = new mongoose.Types.ObjectId(String(user.id))
 
-  // Aggregate to get latest and previous position per keyword
+  // Aggregate to get latest and previous position per keyword.
+  // We only push up to 2 records per keyword (latest + previous) to avoid
+  // accumulating the full history and hitting MongoDB's aggregation memory limit.
   const pipeline = [
     {
       $match: {
@@ -37,6 +39,8 @@ export default defineEventHandler(async (event) => {
         allPositions: { $push: { position: '$position', date: '$date' } },
       },
     },
+    // Immediately truncate allPositions to 2 elements so subsequent stages are lean
+    { $set: { allPositions: { $slice: ['$allPositions', 2] } } },
     {
       $addFields: {
         previousPosition: {
@@ -79,12 +83,12 @@ export default defineEventHandler(async (event) => {
     KeywordRanking.aggregate([
       ...pipeline.slice(0, 3), // match + sort + group
       { $count: 'total' },
-    ]),
+    ]).allowDiskUse(true),
     KeywordRanking.aggregate([
       ...pipeline,
       { $skip: skip },
       { $limit: pageSize },
-    ]),
+    ]).allowDiskUse(true),
   ])
 
   const total = countResult[0]?.total ?? 0
