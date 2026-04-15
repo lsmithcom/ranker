@@ -262,77 +262,87 @@ export async function pullGa4Data(userId: string, propertyId: string, targetDate
   }
 
   // ── E-commerce Summary (daily totals) ─────────────────────────────────────
-  const ecomSummaryRes = await analyticsData.properties.runReport({
-    property: ga4PropertyPath,
-    requestBody: {
-      dateRanges,
-      metrics: [
-        { name: 'totalRevenue' },
-        { name: 'ecommercePurchases' },
-        { name: 'itemsPurchased' },
-        { name: 'addToCarts' },
-      ],
-      limit: 1,
-    },
-  })
-
-  const ecomRow = ecomSummaryRes.data.rows?.[0]
-  if (ecomRow) {
-    const m = ecomRow.metricValues || []
-    await (Ga4EcommerceSummary as any).findOneAndUpdate(
-      { ...baseFields },
-      {
-        $set: {
-          totalRevenue: parseFloat(m[0]?.value || '0'),
-          purchases: parseInt(m[1]?.value || '0'),
-          itemsPurchased: parseInt(m[2]?.value || '0'),
-          addToCarts: parseInt(m[3]?.value || '0'),
-          pulledAt: new Date(),
-        },
+  // Wrapped in try/catch — e-commerce API calls are optional enrichment.
+  // A failure here must not abort the core pull (page metrics, sources, devices, geo).
+  try {
+    const ecomSummaryRes = await analyticsData.properties.runReport({
+      property: ga4PropertyPath,
+      requestBody: {
+        dateRanges,
+        metrics: [
+          { name: 'totalRevenue' },
+          { name: 'ecommercePurchases' },
+          { name: 'itemsPurchased' },
+          { name: 'addToCarts' },
+        ],
+        limit: 1,
       },
-      { upsert: true },
-    )
+    })
+
+    const ecomRow = ecomSummaryRes.data.rows?.[0]
+    if (ecomRow) {
+      const m = ecomRow.metricValues || []
+      await (Ga4EcommerceSummary as any).findOneAndUpdate(
+        { ...baseFields },
+        {
+          $set: {
+            totalRevenue: parseFloat(m[0]?.value || '0'),
+            purchases: parseInt(m[1]?.value || '0'),
+            itemsPurchased: parseInt(m[2]?.value || '0'),
+            addToCarts: parseInt(m[3]?.value || '0'),
+            pulledAt: new Date(),
+          },
+        },
+        { upsert: true },
+      )
+    }
+  } catch (err) {
+    console.error(`[ga4] E-commerce summary pull failed for property ${propertyId}:`, err)
   }
 
   // ── E-commerce Items (per-item daily breakdown) ────────────────────────────
-  const ecomItemRes = await analyticsData.properties.runReport({
-    property: ga4PropertyPath,
-    requestBody: {
-      dateRanges,
-      dimensions: [
-        { name: 'itemId' },
-        { name: 'itemName' },
-        { name: 'itemCategory' },
-      ],
-      metrics: [
-        { name: 'itemRevenue' },
-        { name: 'itemsPurchased' },
-        { name: 'itemsAddedToCart' },
-        { name: 'itemsViewed' },
-      ],
-      limit: 5000,
-    },
-  })
-
-  for (const row of ecomItemRes.data.rows || []) {
-    const d = row.dimensionValues || []
-    const m = row.metricValues || []
-
-    await (Ga4EcommerceItem as any).findOneAndUpdate(
-      { ...baseFields, itemId: d[0]?.value || '(not set)' },
-      {
-        $set: {
-          itemName: d[1]?.value || '',
-          itemCategory: d[2]?.value || '',
-          itemRevenue: parseFloat(m[0]?.value || '0'),
-          itemsPurchased: parseInt(m[1]?.value || '0'),
-          itemsAddedToCart: parseInt(m[2]?.value || '0'),
-          itemsViewed: parseInt(m[3]?.value || '0'),
-          pulledAt: new Date(),
-        },
+  try {
+    const ecomItemRes = await analyticsData.properties.runReport({
+      property: ga4PropertyPath,
+      requestBody: {
+        dateRanges,
+        dimensions: [
+          { name: 'itemId' },
+          { name: 'itemName' },
+          { name: 'itemCategory' },
+        ],
+        metrics: [
+          { name: 'itemRevenue' },
+          { name: 'itemsPurchased' },
+          { name: 'itemsAddedToCart' },
+          { name: 'itemsViewed' },
+        ],
+        limit: 5000,
       },
-      { upsert: true },
-    )
+    })
+
+    for (const row of ecomItemRes.data.rows || []) {
+      const d = row.dimensionValues || []
+      const m = row.metricValues || []
+
+      await (Ga4EcommerceItem as any).findOneAndUpdate(
+        { ...baseFields, itemId: d[0]?.value || '(not set)' },
+        {
+          $set: {
+            itemName: d[1]?.value || '',
+            itemCategory: d[2]?.value || '',
+            itemRevenue: parseFloat(m[0]?.value || '0'),
+            itemsPurchased: parseInt(m[1]?.value || '0'),
+            itemsAddedToCart: parseInt(m[2]?.value || '0'),
+            itemsViewed: parseInt(m[3]?.value || '0'),
+            pulledAt: new Date(),
+          },
+        },
+        { upsert: true },
+      )
+    }
+  } catch (err) {
+    console.error(`[ga4] E-commerce items pull failed for property ${propertyId}:`, err)
   }
 
   // Mark last GA4 pull time on the property
