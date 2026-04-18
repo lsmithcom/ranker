@@ -13,7 +13,7 @@ export default defineTask({
     const properties = await Property.find({
       'ga4PullSchedule.isScheduled': true,
       'ga4PullSchedule.nextPullAt': { $lte: now },
-      ga4PropertyId: { $exists: true, $ne: null, $ne: '' },
+      ga4PropertyId: { $exists: true, $nin: [null, ''] },
       isActive: true,
     })
 
