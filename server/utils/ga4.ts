@@ -69,7 +69,7 @@ export async function pullGa4Data(userId: string, propertyId: string, targetDate
     d.setDate(d.getDate() - 1)
     return d
   })()
-  date.setHours(0, 0, 0, 0)
+  date.setUTCHours(0, 0, 0, 0)
 
   const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD
   const ga4PropertyPath = `properties/${property.ga4PropertyId}`
@@ -101,7 +101,6 @@ export async function pullGa4Data(userId: string, propertyId: string, targetDate
           { name: 'bounceRate' },
           { name: 'averageSessionDuration' },
           { name: 'engagementRate' },
-          { name: 'entrances' },
           { name: 'scrolledUsers' },
           { name: 'conversions' },
         ],
@@ -128,9 +127,8 @@ export async function pullGa4Data(userId: string, propertyId: string, targetDate
             bounceRate: parseFloat(m[4]?.value || '0'),
             avgSessionDurationSec: parseFloat(m[5]?.value || '0'),
             engagementRate: parseFloat(m[6]?.value || '0'),
-            entrances: parseInt(m[7]?.value || '0'),
-            scrolledUsers: parseInt(m[8]?.value || '0'),
-            conversions: parseInt(m[9]?.value || '0'),
+            scrolledUsers: parseInt(m[7]?.value || '0'),
+            conversions: parseInt(m[8]?.value || '0'),
             pulledAt: new Date(),
           },
         },
@@ -143,6 +141,27 @@ export async function pullGa4Data(userId: string, propertyId: string, targetDate
     } else {
       pageOffset += pageRowLimit
     }
+  }
+
+  // ── Landing Pages (entrances = sessions starting on each page) ───────────
+  // GA4 doesn't expose `entrances` as a metric; use landingPage dimension + sessions instead.
+  const landingRes = await analyticsData.properties.runReport({
+    property: ga4PropertyPath,
+    requestBody: {
+      dateRanges,
+      dimensions: [{ name: 'landingPage' }],
+      metrics: [{ name: 'sessions' }],
+      limit: 10000,
+    },
+  })
+
+  for (const row of landingRes.data.rows || []) {
+    const landingPath = row.dimensionValues?.[0]?.value || '/'
+    const entrances = parseInt(row.metricValues?.[0]?.value || '0')
+    await (Ga4PageMetric as any).updateOne(
+      { ...baseFields, pagePath: landingPath },
+      { $set: { entrances } },
+    )
   }
 
   // ── Traffic Sources ────────────────────────────────────────────────────────
